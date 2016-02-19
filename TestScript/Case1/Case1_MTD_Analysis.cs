@@ -8,6 +8,7 @@ using Young.Data;
 using System.Data;
 using SAPFEWSELib;
 using System.IO;
+using System.Threading;
 
 namespace TestScript.Case1
 {
@@ -86,9 +87,32 @@ namespace TestScript.Case1
             SAPTestHelper.Current.MainWindow.FindById<GuiMenu>("mbar/menu[0]/menu[10]/menu[3]/menu[2]").Select();
             SAPTestHelper.Current.PopupWindow.FindByName<GuiRadioButton>("SPOPLI-SELFLAG").Select();
             SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
-            SAPTestHelper.Current.PopupWindow.FindByName<GuiCTextField>("DY_PATH").Text = "Directory";
-            SAPTestHelper.Current.PopupWindow.FindByName<GuiCTextField>("DY_FILENAME").Text = "FileName";
-            //SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
+
+            var dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"temp");
+            var fileName = data.CompanyCode + ".txt";
+
+            var filePath = Path.Combine(dir, fileName);
+
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+
+            if (File.Exists(filePath))
+                File.Delete(filePath);
+
+
+
+            SAPTestHelper.Current.PopupWindow.FindByName<GuiCTextField>("DY_PATH").Text =dir;
+            SAPTestHelper.Current.PopupWindow.FindByName<GuiCTextField>("DY_FILENAME").Text = fileName;
+
+           
+
+            var windowName = SAPTestHelper.Current.MainWindow.Text;
+
+            
+            Task.Run(() => { UIHelper.SetAccess(windowName); });
+            SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
+           
+
         }
 
         public void ReadData()
