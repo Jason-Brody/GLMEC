@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Reflection;
 
 namespace TestScript
 {
@@ -22,7 +23,11 @@ namespace TestScript
             }
             foreach (var prop in typeof(T).GetProperties())
             {
+                var alias = prop.GetCustomAttribute<AliasAttribute>();
                 var lowerProp = prop.Name.ToLower();
+                if (alias != null)
+                    lowerProp = alias.Name.ToLower();
+                
                 if (cols.ContainsKey(lowerProp))
                 {
                     object value = Convert.ChangeType(dr[cols[lowerProp]], prop.PropertyType);
@@ -31,5 +36,16 @@ namespace TestScript
             }
             return item;
         }
+    }
+
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
+    public class AliasAttribute : Attribute
+    {
+        public AliasAttribute(string Name)
+        {
+            this.Name = Name;
+        }
+
+        public string Name { get; set; }
     }
 }

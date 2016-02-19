@@ -12,7 +12,6 @@ namespace TestScript
     {
         public static void SetAccess(string windowName)
         {
-            Console.Clear();
             bool isPress = false;
             while(!isPress)
             {
@@ -22,7 +21,6 @@ namespace TestScript
                 {
                     if (e.Current.Name == windowName)
                         break;
-                    Console.WriteLine(e.Current.Name);
                     var tempE = TreeWalker.ControlViewWalker.GetNextSibling(e);
                     e = tempE;
                     
