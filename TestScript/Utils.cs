@@ -10,7 +10,17 @@ namespace TestScript
 {
     public class Utils
     {
-        
+
+        public static float GetAmount(string val)
+        {
+            val.Replace(",", "");
+            var pos = val.IndexOf('-');
+            if (val.Contains("-") && val.IndexOf('-') == val.Length - 1)
+            {
+                val = "-" + val.Substring(0, val.Length - 1);
+            }
+            return float.Parse(val);
+        }
 
         public static DataTable ReadStringToTable(string filePath, Func<string,string,List<string>> LineFunc)
         {

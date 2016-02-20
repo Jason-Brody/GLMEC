@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TestScript
 {
-    class LoginDataModel
+    public class LoginDataModel
     {
         public string UserName { get; set; }
 

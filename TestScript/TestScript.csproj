@@ -52,6 +52,7 @@
   <ItemGroup>
     <Compile Include="Case1\AccountModel.cs" />
     <Compile Include="Case1\Case1DataModel.cs" />
+    <Compile Include="Case1\Case1ReportDataModel.cs" />
     <Compile Include="Case1\Case1_MTD_Analysis.cs" />
     <Compile Include="Class1.cs" />
     <Compile Include="DataRowExtension.cs" />

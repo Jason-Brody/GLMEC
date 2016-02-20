@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TestScript.Case1
 {
-    class Case1DataModel:LoginDataModel
+    public class Case1DataModel:LoginDataModel
     {
         public string GLAccountFrom { get; set; }
 
