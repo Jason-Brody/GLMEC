@@ -15,7 +15,11 @@ namespace TestScript.Case1
 {
     public class Case1_MTD_Analysis : IRunner
     {
-       
+        private string _workDir;
+        private string _tempDir;
+        private string _glAccountFileName;
+        private string _accountPath;
+        private string _reportSourceDataDir;
 
         public Case1_MTD_Analysis()
         {
@@ -25,9 +29,13 @@ namespace TestScript.Case1
             _steps.Add(new StepInfo() { Id = 4, Name = "Get Report Data", IsProcessKnown = true });
         }
 
+        
+
         private DataTable _dt;
 
         private List<StepInfo> _steps = new List<StepInfo>();
+
+        public event ProcessHander OnProcess;
 
         public List<StepInfo> GetSteps
         {
@@ -45,7 +53,17 @@ namespace TestScript.Case1
             }
         }
 
-        public event ProcessHander OnProcess;
+        
+
+        private void setCondig(Case1DataModel data)
+        {
+            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            _workDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ReportData", data.CompanyCode);
+            _tempDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Temp");
+            _reportSourceDataDir = Path.Combine(_workDir, "Datas");
+            _glAccountFileName = $"{data.CompanyCode}.txt";
+            _accountPath = @"Case1\Accountlist.txt";
+        }
 
         public void Run()
         {
@@ -54,37 +72,84 @@ namespace TestScript.Case1
             foreach (DataRow dr in _dt.Rows)
             {
                 var data = dr.ToEntity<Case1DataModel>();
+                setCondig(data);
                 login(data);
 
-                var dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp");
-                var fileName = data.CompanyCode + ".txt";
-                var filePath = Path.Combine(dir, fileName);
+                getGLAccount(data);
 
+                getData(data, formatGlAccountData());
 
-                getGLAccount(data, dir, fileName);
+                mergeData(_reportSourceDataDir);
+            }
+        }
 
-                var accountDatas = Utils.ReadStringToTable(filePath, (s) =>
+        private DataTable formatGlAccountData()
+        {
+            var accountDatas = Utils.ReadStringToTable(Path.Combine(_workDir,_glAccountFileName), (s,s1) =>
+            {
+                string splitchar = "|";
+                if (!s.Contains(splitchar))
+                    return null;
+                var vals = s.Split(splitchar.ToCharArray().First());
+                var returnVals = new List<string>();
+                for (int i = 0; i < vals.Count(); i++)
                 {
-                    string splitchar = "|";
-                    if (!s.Contains(splitchar))
+                    returnVals.Add(vals[i].Trim());
+                }
+                return returnVals;
+            });
+            return accountDatas;
+        }
+
+        private DataTable mergeData(string dir)
+        {
+            DataTable mergeTable = null;
+
+            foreach (var f in Directory.GetFiles(dir))
+            {
+                DataTable dt = Utils.ReadStringToTable(f, (s, h) =>
+                {
+                    string splitChar = "|";
+                    if (!s.Contains(splitChar) || s == h || s.Contains("*"))
                         return null;
-                    var vals = s.Split(splitchar.ToCharArray().First());
+
+                    var vals = s.Split(splitChar.ToCharArray().First());
                     var returnVals = new List<string>();
                     for (int i = 0; i < vals.Count(); i++)
                     {
                         returnVals.Add(vals[i].Trim());
                     }
                     return returnVals;
+
                 });
 
-                getData(data, accountDatas);
+                if (mergeTable == null)
+                    mergeTable = dt.Copy();
+                else
+                {
+                    foreach (DataRow dr in dt.Rows)
+                    {
+                        DataRow newDr = mergeTable.NewRow();
+                        for (int i = 0; i < mergeTable.Columns.Count; i++)
+                        {
+                            newDr[i] = dr[i];
+                        }
+                        mergeTable.Rows.Add(newDr);
+                    }
+
+                }
+
+
             }
+
+            return mergeTable;
+
         }
 
         private void login(LoginDataModel data)
         {
             var step = _steps.Where(s => s.Id == 2).First();
-            OnProcess(step);
+            //OnProcess(step);
             SAPLogon l = new SAPLogon();
             l.StartProcess();
             l.OpenConnection(data.Address);
@@ -96,7 +161,7 @@ namespace TestScript.Case1
         private void getData(Case1DataModel data, DataTable accountData)
         {
             var step = _steps.Where(s => s.Id == 4).First();
-            OnProcess(step);
+            //OnProcess(step);
             List<AccountModel> accounts = new List<AccountModel>();
 
             foreach (DataRow dr in accountData.Rows)
@@ -116,7 +181,6 @@ namespace TestScript.Case1
 
                 h.SAPGuiSession.StartTransaction("FAGLL03");
                 h.MainWindow.FindByName<GuiCTextField>("SD_SAKNR-LOW").Text = accounts[i].Account;
-                //h.MainWindow.FindByName<GuiCTextField>("SD_SAKNR-HIGH").Text = data.GLAccountTo;
                 h.MainWindow.FindByName<GuiCTextField>("SD_BUKRS-LOW").Text = data.CompanyCode;
 
                 //Set Multiple Accounts
@@ -131,42 +195,80 @@ namespace TestScript.Case1
                 h.MainWindow.FindByName<GuiCTextField>("PA_VARI").Text = data.Layout;
 
                 DateTime start = DateTime.Now;
-
+                //click execute button
                 h.MainWindow.FindByName<GuiButton>("btn[8]").Press();
-                step.CurrentProcess++;
-
-                DateTime end = DateTime.Now;
 
                 accounts[i].DataCount = SAPTestHelper.Current.MainWindow.FindById<GuiGridView>("usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").RowCount;
-                accounts[i].Period = end.Subtract(start);
 
-            }
 
-            using (FileStream fs = new FileStream("result.txt", FileMode.Create))
-            {
-                using (StreamWriter sw = new StreamWriter(fs))
+                //var dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory,$"ReportData\\{data.CompanyCode}");
+                if (accounts[i].DataCount>0)
                 {
-                    for (int i = 0; i < accounts.Count; i++)
+                    //click filter button
+                    h.MainWindow.FindByName<GuiButton>("btn[38]").Press();
+
+
+
+                    var grid = h.PopupWindow.FindById<GuiGridView>("usr/subSUB_DYN0500:SAPLSKBH:0600/cntlCONTAINER2_FILT/shellcont/shell");
+                    if (grid.RowCount > 0)
                     {
-                        string line = $"{accounts[i].Account},{accounts[i].DataCount},{accounts[i].Period.Seconds}";
-                        sw.WriteLine(line);
+                        grid.SelectAll();
+                       h.PopupWindow.FindByName<GuiButton>("APP_FL_SING").Press();
                     }
-                    
+
+                    grid = h.PopupWindow.FindById<GuiGridView>("usr/subSUB_DYN0500:SAPLSKBH:0600/cntlCONTAINER1_FILT/shellcont/shell");
+                    for (int j = 0; j < grid.RowCount; j++)
+                    {
+                        if (grid.GetCellValueByDisplayColumn(j, "Column Name") == "Document Date")
+                        {
+                            grid.SelectedRows = j.ToString();
+                            h.PopupWindow.FindByName<GuiButton>("APP_WL_SING").Press();
+                            h.PopupWindow.FindByName<GuiButton>("600_BUTTON").Press();
+                            h.PopupWindow.FindByName<GuiCTextField>("%%DYN001-LOW").Text = data.DocDateFrom;
+                            h.PopupWindow.FindByName<GuiCTextField>("%%DYN001-HIGH").Text = data.DocDateTo;
+                            h.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
+                            break;
+                        }
+                    }
+
+                    DateTime end = DateTime.Now;
+
+                    accounts[i].Period = end.Subtract(start);
+
+                   
+
+                    string file = $"{accounts[i].Account}.txt";
+
+                    accounts[i].DataCount = SAPTestHelper.Current.MainWindow.FindById<GuiGridView>("usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").RowCount;
+
+                    outputFile("mbar/menu[0]/menu[3]/menu[2]", _reportSourceDataDir, file);
                 }
+
+                
+
+                string processFile = $"{_workDir}\\result.txt";
+
+                using (StreamWriter sw = new StreamWriter(processFile, true))
+                {
+                    string line = $"{accounts[i].Account},{accounts[i].DataCount},{accounts[i].Period.Seconds}";
+                    sw.WriteLine(line);
+                }
+
+                step.CurrentProcess++;
+
             }
-            
 
             step.IsComplete = true;
 
         }
 
-        private void getGLAccount(Case1DataModel data, string dir, string fileName)
-        {
+        private void getGLAccount(Case1DataModel data)
+        {           
             var step = _steps.Where(s => s.Id == 3).First();
-            OnProcess(step);
+            //OnProcess(step);
 
             List<List<Tuple<int, string>>> accounts = new List<List<Tuple<int, string>>>();
-            using (StreamReader sr = new StreamReader(@"Case1\Accountlist.txt"))
+            using (StreamReader sr = new StreamReader(_accountPath))
             {
                 while (!sr.EndOfStream)
                 {
@@ -190,12 +292,17 @@ namespace TestScript.Case1
             SAPTestHelper.Current.MainWindow.FindByName<GuiTextField>("MAX_SEL").Text = "10000";
             SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("btn[8]").Press();
 
-            SAPTestHelper.Current.MainWindow.FindById<GuiMenu>("mbar/menu[0]/menu[10]/menu[3]/menu[2]").Select();
+
+            outputFile("mbar/menu[0]/menu[10]/menu[3]/menu[2]", _workDir, _glAccountFileName);
+           
+            step.IsComplete = true;
+        }
+
+        private void outputFile(string outputmenuId,string dir,string fileName)
+        {
+            SAPTestHelper.Current.MainWindow.FindById<GuiMenu>(outputmenuId).Select();
             SAPTestHelper.Current.PopupWindow.FindByName<GuiRadioButton>("SPOPLI-SELFLAG").Select();
             SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
-
-
-
 
             var filePath = Path.Combine(dir, fileName);
 
@@ -210,15 +317,18 @@ namespace TestScript.Case1
 
             var windowName = SAPTestHelper.Current.MainWindow.Text;
 
-            Task.Run(() => { UIHelper.SetAccess(windowName); });
+            var ts = new CancellationTokenSource();
+            var ct = ts.Token;
+
+            Task.Run(() => { UIHelper.SetAccess(windowName,ct); });
             SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
-            step.IsComplete = true;
+            ts.Cancel();
         }
 
-        public void ReadData()
+        private void ReadData()
         {
             var step = _steps.First();
-            OnProcess(step);
+            //OnProcess(step);
             _dt = ExcelHelper.Current.Open("Case1_MTD_Analysis.xlsx").Read("Case1_MTD_Analysis");
             ExcelHelper.Current.Close();
             step.IsComplete = true;

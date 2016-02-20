@@ -10,8 +10,11 @@ namespace TestScript
 {
     class UIHelper
     {
-        public static void SetAccess(string windowName)
+        public static void SetAccess(string windowName,CancellationToken token)
         {
+            if (token.IsCancellationRequested)
+                token.ThrowIfCancellationRequested();
+
             bool isPress = false;
             while(!isPress)
             {

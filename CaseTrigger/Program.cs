@@ -7,6 +7,7 @@ using System.Windows.Automation;
 using TestScript.Case1;
 using TestScript;
 using System.Data;
+using System.IO;
 
 namespace CaseTrigger
 {
@@ -14,48 +15,9 @@ namespace CaseTrigger
     {
         static void Main(string[] args)
         {
-
-            //string file = @"temp\DE50.txt";
-            //var table = Utils.ReadStringToTable(file, (s) =>
-            //{
-            //    string splitchar = "|";
-            //    if (!s.Contains(splitchar))
-            //        return null;
-            //    var vals = s.Split(splitchar.ToCharArray().First()).ToList();
-            //    var returnVals = new List<string>();
-            //    vals.ForEach(temps => returnVals.Add(temps.Trim()));
-            //    return returnVals;
-            //});
-
-            //List<AccountModel> accounts = new List<AccountModel>();
-            
-            //foreach (DataRow dr in table.Rows)
-            //{
-            //    AccountModel acct = dr.ToEntity<AccountModel>();
-            //    accounts.Add(acct);
-
-            //}
-
-            //int b = accounts.Count / 100;
-
-            //for(int i =0;i< b;i++)
-            //{
-            //    List<List<Tuple<int, string>>> testAccounts = accounts.Skip(i * 100).Take(100).Select(
-            //       c => new List<Tuple<int, string>>() { new Tuple<int, string>(1, c.Account) }).ToList();
-            //}
-           
-
-            //var e = TreeWalker.ControlViewWalker.GetFirstChild(AutomationElement.RootElement);
-
-            //while (e != null)
-            //{
-            //    Console.WriteLine(e.Current.Name);
-            //    var tempE = TreeWalker.ControlViewWalker.GetNextSibling(e);
-            //    e = tempE;
-
-
-            //}
-
+            Console.WriteLine(DateTime.Now);
+            mergeData(@"C:\Work\GLMEC\CaseTrigger\bin\Debug\ReportData\DE50\Datas");
+            Console.WriteLine(DateTime.Now);
             Console.WindowHeight = 1;
             Console.WindowWidth = 1;
             Case1_MTD_Analysis case1 = new Case1_MTD_Analysis();
@@ -64,6 +26,51 @@ namespace CaseTrigger
 
         }
 
+
+        static void mergeData(string dir)
+        {
+            DataTable mergeTable = null;
+            
+            foreach (var f in Directory.GetFiles(dir))
+            {
+                DataTable dt = Utils.ReadStringToTable(f, (s, h) =>
+                {
+                    string splitChar = "|";
+                    if (!s.Contains(splitChar) || s == h || s.Contains("*"))
+                        return null;
+
+                    var vals = s.Split(splitChar.ToCharArray().First());
+                    var returnVals = new List<string>();
+                    for (int i = 0; i < vals.Count(); i++)
+                    {
+                        returnVals.Add(vals[i].Trim());
+                    }
+                    return returnVals;
+
+                });
+
+                if (mergeTable == null)
+                    mergeTable = dt.Copy();
+                else
+                {
+                    foreach (DataRow dr in dt.Rows)
+                    {
+                        DataRow newDr = mergeTable.NewRow();
+                        for (int i = 0; i < mergeTable.Columns.Count; i++)
+                        {
+                            newDr[i] = dr[i];
+                        }
+                        mergeTable.Rows.Add(newDr);
+                    }
+
+                }
+
+                
+            }
+
+            Console.WriteLine(DateTime.Now);
+
+        }
 
 
 

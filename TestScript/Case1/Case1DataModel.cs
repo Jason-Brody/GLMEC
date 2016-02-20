@@ -18,6 +18,13 @@ namespace TestScript.Case1
 
         public string PostingDateTo { get; set; }
 
+        public string DocDateFrom { get; set; }
+
+        public string DocDateTo { get; set; }
+
         public string Layout { get; set; }
+
+        public static string WorkDirectory { get; set; }
+
     }
 }
