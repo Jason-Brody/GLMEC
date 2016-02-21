@@ -103,6 +103,10 @@
       <Project>{fd156a54-42b2-4be1-819c-80660e9f4507}</Project>
       <Name>CaseRunnerModel</Name>
     </ProjectReference>
+    <ProjectReference Include="..\TestScript\TestScript.csproj">
+      <Project>{7d93654b-5978-4922-9cc4-20deef9d954e}</Project>
+      <Name>TestScript</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="TestCases\" />

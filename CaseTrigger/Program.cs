@@ -11,6 +11,8 @@ using System.IO;
 using Young.Data;
 using SAPAutomation;
 using SAPFEWSELib;
+using Ex = Microsoft.Office.Interop.Excel;
+using System.Reflection;
 
 namespace CaseTrigger
 {
@@ -18,12 +20,13 @@ namespace CaseTrigger
     {
         static void Main(string[] args)
         {
-          
 
-            //var _dt = ExcelHelper.Current.Open("Case1_MTD_Analysis.xlsx").Read("Case1_MTD_Analysis");
-            //ExcelHelper.Current.Close();
-            //var data = _dt.Rows[0].ToEntity<Case1DataModel>();
-            //mergeData(@"E:\GitHub\GLMEC\CaseTrigger\bin\Debug\ReportData\DE50\Datas");
+            Console.WriteLine(Utils.FillNumber("200000160"));
+            var _dt = ExcelHelper.Current.Open("Case1_MTD_Analysis.xlsx").Read("Case1_MTD_Analysis");
+            ExcelHelper.Current.Close();
+            var data = _dt.Rows[0].ToEntity<Case1DataModel>();
+            var datas = mergeData(@"E:\GitHub\GLMEC\CaseTrigger\bin\Debug\ReportData\DE50\Datas");
+            datas.ExportToExcel("test.xlsx", "MTD Analysis");
             Console.WriteLine(DateTime.Now);
             Console.WindowHeight = 1;
             Console.WindowWidth = 1;
@@ -31,6 +34,40 @@ namespace CaseTrigger
             case1.Run();
 
 
+        }
+
+      
+
+
+        private static void changeLayout(Dictionary<string, int> columns)
+        {
+            SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("btn[32]").Press();
+            var displayedColumnsGrid = SAPTestHelper.Current.PopupWindow.FindById<GuiGridView>("usr/tabsG_TS_ALV/tabpALV_M_R1/ssubSUB_DYN0510:SAPLSKBH:0620/cntlCONTAINER2_LAYO/shellcont/shell");
+            if (displayedColumnsGrid.RowCount > 0)
+            {
+                displayedColumnsGrid.SelectAll();
+                SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("APP_FL_SING").Press();
+            }
+            var columnSetGrid = SAPTestHelper.Current.PopupWindow.FindById<GuiGridView>("usr/tabsG_TS_ALV/tabpALV_M_R1/ssubSUB_DYN0510:SAPLSKBH:0620/cntlCONTAINER1_LAYO/shellcont/shell");
+
+            string selectedRow = "";
+
+            for (int c = 0; c < columnSetGrid.RowCount; c++)
+            {
+                var col = columnSetGrid.GetCellValue(c, "SELTEXT");
+
+                if (columns.ContainsKey(col))
+                {
+                    selectedRow += c.ToString() + ",";
+                    columns[col] = c;
+                }
+
+            }
+
+            columnSetGrid.SelectedRows = selectedRow;
+            SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("APP_WL_SING").Press();
+
+            SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
         }
 
         static void OB08(DataTable dt)
@@ -139,6 +176,7 @@ namespace CaseTrigger
                 }
             }
 
+            report.Export("test.csv", "|");
             return report;
 
         }

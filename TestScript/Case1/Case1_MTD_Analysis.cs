@@ -10,6 +10,7 @@ using SAPFEWSELib;
 using System.IO;
 using System.Threading;
 using CaseRunnerModel;
+using Ex = Microsoft.Office.Interop.Excel;
 
 namespace TestScript.Case1
 {
@@ -22,6 +23,9 @@ namespace TestScript.Case1
         private string _reportSourceDataDir;
         private Dictionary<string, int> _dataOutputLayout;
         private List<Case1ReportDataModel> _reportData;
+        private List<Case1DocInfoModel> _docInfoes;
+        private string _docInfoFileName = "SE16_BKPF.txt";
+        private string _reportFileName = "report.csv";
 
         public Case1_MTD_Analysis()
         {
@@ -29,8 +33,18 @@ namespace TestScript.Case1
             _steps.Add(new StepInfo() { Id = 2, Name = "Login to LH", IsProcessKnown = false });
             _steps.Add(new StepInfo() { Id = 3, Name = "Get GL Accounts", IsProcessKnown = true });
             _steps.Add(new StepInfo() { Id = 4, Name = "Get Report Data", IsProcessKnown = true });
+            _steps.Add(new StepInfo() { Id = 5, Name = "Merge Report Data", IsProcessKnown = true });
+            _steps.Add(new StepInfo() { Id = 6, Name = "Get Currency Rate", IsProcessKnown = true });
+            _steps.Add(new StepInfo() { Id = 7, Name = "Get Detail info by doc number", IsProcessKnown = true });
+            _steps.Add(new StepInfo() { Id = 8, Name = "Generate Report", IsProcessKnown = true });
+            _steps.Add(new StepInfo() { Id = 9, Name = "Format Report", IsProcessKnown = true });
         }
 
+        private void process(StepInfo step)
+        {
+            if (OnProcess != null)
+                OnProcess(step);
+        }
         
 
         private DataTable _dt;
@@ -54,8 +68,6 @@ namespace TestScript.Case1
                 return new CaseInfo() { Name = nameof(Case1_MTD_Analysis) };
             }
         }
-
-        
 
         private void setCondig(Case1DataModel data)
         {
@@ -101,7 +113,11 @@ namespace TestScript.Case1
 
                 var curDic = getCurrency();
 
-                getDocInfo(curDic, data);
+                getDocInfo(data);
+
+                generateReport(curDic);
+
+                formatReport();
             }
         }
 
@@ -125,8 +141,11 @@ namespace TestScript.Case1
 
         private List<Case1ReportDataModel> mergeData(string dir)
         {
+
+            var step = _steps.Where(s => s.Id == 5).First();
+            process(step);
             List<Case1ReportDataModel> report = new List<Case1ReportDataModel>();
-            
+
             //Dictionary<string, int> dic = new Dictionary<string, int>();
             //dic.Add("LOGICAL SYSTEM", 1);
             //dic.Add("COMPANY CODE", 2);
@@ -160,7 +179,8 @@ namespace TestScript.Case1
             //{
             //    mergeTable.Columns.Add(item.Key);
             //}
-
+            step.CurrentProcess = 0;
+            step.TotalProcess = Directory.GetFiles(dir).Count();
             foreach (var f in Directory.GetFiles(dir))
             {
                 DataTable dt = Utils.ReadStringToTable(f, (s, h) =>
@@ -182,7 +202,7 @@ namespace TestScript.Case1
                 foreach (DataRow dr in dt.Rows)
                 {
                     Case1ReportDataModel rp = new Case1ReportDataModel();
-                    rp.DocumentNumber = dr[1].ToString();
+                    rp.DocumentNumber = Utils.FillNumber(dr[1].ToString());
                     rp.DocType = dr[2].ToString();
                     rp.DocumentDate = dr[3].ToString();
                     rp.AmtInlocalCur = Utils.GetAmount(dr[4].ToString());
@@ -221,14 +241,18 @@ namespace TestScript.Case1
 
                     //mergeTable.Rows.Add(newDr);
                 }
+                step.CurrentProcess++;
             }
-
+            step.IsComplete = true;
             return report;
 
         }
 
         private Dictionary<string,float> getCurrency()
         {
+            var step = _steps.Where(s => s.Id == 6).First();
+            process(step);
+
             var curList = new List<string>();
             curList.AddRange(_reportData.Where(c=>c.DocCurrency.ToLower()!="usd").GroupBy(g => g.DocCurrency).Select(s => s.Key));
             curList.AddRange(_reportData.Where(c => c.LocalCur.ToLower() != "usd").GroupBy(g => g.LocalCur).Select(s => s.Key));
@@ -245,7 +269,9 @@ namespace TestScript.Case1
                 SAPTestHelper.Current.SAPGuiSession.StartTransaction("OB08");
                 SAPTestHelper.Current.MainWindow.SendKey(SAPKeys.Ctrl_F4);
             }
-            
+
+            step.CurrentProcess = 0;
+            step.TotalProcess = rateDic.Count;
 
             for (int i =0;i<rateDic.Count;i++)
             {
@@ -267,15 +293,51 @@ namespace TestScript.Case1
                     }
                 }
 
-            }
+                step.CurrentProcess++;
 
+            }
+            step.IsComplete = true;
             return rateDic;
            
         }
 
-        private void getDocInfo(Dictionary<string,float> curDic,Case1DataModel data)
+        //private void changeLayout(Dictionary<string,int> columns)
+        //{
+        //    SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("btn[32]").Press();
+        //    var displayedColumnsGrid = SAPTestHelper.Current.PopupWindow.FindById<GuiGridView>("usr/tabsG_TS_ALV/tabpALV_M_R1/ssubSUB_DYN0510:SAPLSKBH:0620/cntlCONTAINER2_LAYO/shellcont/shell");
+        //    if (displayedColumnsGrid.RowCount > 0)
+        //    {
+        //        displayedColumnsGrid.SelectAll();
+        //        SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("APP_FL_SING").Press();
+        //    }
+        //    var columnSetGrid = SAPTestHelper.Current.PopupWindow.FindById<GuiGridView>("usr/tabsG_TS_ALV/tabpALV_M_R1/ssubSUB_DYN0510:SAPLSKBH:0620/cntlCONTAINER1_LAYO/shellcont/shell");
+
+        //    string selectedRow = "";
+
+        //    for (int c = 0; c < columnSetGrid.RowCount; c++)
+        //    {
+        //        var col = columnSetGrid.GetCellValue(c, "SELTEXT");
+
+        //        if (columns.ContainsKey(col))
+        //        {
+        //            selectedRow += c.ToString() + ",";
+        //            columns[col] = c;
+        //        }
+
+        //    }
+
+        //    columnSetGrid.SelectedRows = selectedRow;
+        //    SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("APP_WL_SING").Press();
+
+        //    SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
+        //}
+
+        private void getDocInfo(Case1DataModel data)
         {
-            if(_reportData.Count>0)
+            var step = _steps.Where(s => s.Id == 7).First();
+            process(step);
+
+            if (_reportData.Count>0)
             {
                 SAPTestHelper.Current.SAPGuiSession.StartTransaction("SE16");
                 SAPTestHelper.Current.MainWindow.FindByName<GuiCTextField>("DATABROWSE-TABLENAME").Text = "BKPF";
@@ -294,13 +356,123 @@ namespace TestScript.Case1
 
                 SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("btn[8]").Press();
 
+                var grid = SAPTestHelper.Current.MainWindow.FindById<GuiGridView>("usr/cntlGRID1/shellcont/shell");
+
+                if(grid.RowCount>0)
+                {
+                    ///change layout
+                    Dictionary<string, int> columns = new Dictionary<string, int>();
+                    columns.Add("Logical System", -1);
+                    columns.Add("Company Code", -1);
+                    columns.Add("Document Number", -1);
+                    columns.Add("Document Date", -1);
+                    columns.Add("Document Type", -1);
+                    columns.Add("Entry Date", -1);
+                    columns.Add("Posting Date", -1);
+                    columns.Add("Translation Date", -1);
+                    columns.Add("User name", -1);
+                    columns.Add("Currency", -1);
+                    columns.Add("Local Currency", -1);
+                    columns.Add("Local currency 2", -1);
+                    columns.Add("Exchange Rate Type", -1);
+                    columns.Add("Ref.key (header) 1", -1);
+                    UIHelper.ChangeLayout(columns);
+
+                    UIHelper.ExportFile("wnd[0]/mbar/menu[0]/menu[10]/menu[3]/menu[2]", _workDir, _docInfoFileName);
+                }
             }
+
+            step.IsComplete = true;
+        }
+
+        private void generateReport(Dictionary<string,float> curDic)
+        {
+            var step = _steps.Where(s => s.Id == 8).First();
+            process(step);
+
+            var dt = Utils.ReadStringToTable(Path.Combine(_workDir, _docInfoFileName), (s, h) =>
+            {
+                string splitChar = "|";
+                if (!s.Contains(splitChar) || s == h || s.Contains("*"))
+                    return null;
+
+                var vals = s.Split(splitChar.ToCharArray().First());
+                var returnVals = new List<string>();
+                for (int i = 0; i < vals.Count(); i++)
+                {
+                    returnVals.Add(vals[i].Trim());
+                }
+                return returnVals;
+
+            });
+
+            _docInfoes = new List<Case1DocInfoModel>();
+
+            step.CurrentProcess = 0;
+            step.TotalProcess = dt.Rows.Count + _reportData.Count;
+
+            foreach (DataRow dr in dt.Rows)
+            {
+                Case1DocInfoModel di = new Case1DocInfoModel();
+                di.CompanyCode = dr[1].ToString();
+                di.DocumentNumber =Utils.FillNumber(dr[2].ToString());
+                di.DocType = dr[3].ToString();
+                di.DocDate = dr[4].ToString();
+                di.PostingDate = dr[5].ToString();
+                di.EntryDate = dr[6].ToString();
+                di.TransDate = dr[7].ToString();
+                di.UserName = dr[8].ToString();
+                di.DocCurrency = dr[9].ToString();
+                di.LocalCurrency = dr[10].ToString();
+                di.GroupCurrency = dr[11].ToString();
+                di.ExchangeRateType = dr[12].ToString();
+                di.LogicalSystem = dr[14].ToString();
+                di.RefKey1 = dr[15].ToString();
+
+                _docInfoes.Add(di);
+
+                step.CurrentProcess++;
+            }
+
+            var docDic = _docInfoes.ToDictionary(d => d.DocumentNumber);
+
+            foreach (var r in _reportData)
+            {
+                if (curDic.ContainsKey(r.DocCurrency))
+                    r.OB08ExTC_GC = curDic[r.DocCurrency];
+
+                if (curDic.ContainsKey(r.LocalCur))
+                    r.OB08ExLC_GC = curDic[r.LocalCur];
+
+                if(docDic.ContainsKey(r.DocumentNumber))
+                {
+                    r.LogicalSystem = docDic[r.DocumentNumber].LogicalSystem;
+                    r.TranslationDate = docDic[r.DocumentNumber].TransDate;
+                    r.UserName = docDic[r.DocumentNumber].UserName;
+                }
+
+                step.CurrentProcess++;
+            }
+
+            _reportData.Export(Path.Combine(_workDir, _reportFileName), "|");
+
+            step.IsComplete = true;
+        }
+
+        private void formatReport()
+        {
+            string sheetName = "MTD Analysis";
+
+            _reportData.ExportToExcel("result.xlsx", sheetName);
+
+            
+
         }
 
         private void login(LoginDataModel data)
         {
             var step = _steps.Where(s => s.Id == 2).First();
-            //OnProcess(step);
+            process(step);
             SAPLogon l = new SAPLogon();
             l.StartProcess();
             l.OpenConnection(data.Address);
@@ -312,7 +484,7 @@ namespace TestScript.Case1
         private void getData(Case1DataModel data, DataTable accountData)
         {
             var step = _steps.Where(s => s.Id == 4).First();
-            //OnProcess(step);
+            process(step);
             List<AccountModel> accounts = new List<AccountModel>();
 
             foreach (DataRow dr in accountData.Rows)
@@ -351,84 +523,21 @@ namespace TestScript.Case1
 
                 accounts[i].DataCount = SAPTestHelper.Current.MainWindow.FindById<GuiGridView>("usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").RowCount;
 
-
-                //var dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory,$"ReportData\\{data.CompanyCode}");
                 if (accounts[i].DataCount>0)
                 {
                     //change layout
-
-                    SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("btn[32]").Press();
-                    var displayedColumnGrid = SAPTestHelper.Current.PopupWindow.FindById<GuiGridView>("usr/tabsG_TS_ALV/tabpALV_M_R1/ssubSUB_DYN0510:SAPLSKBH:0620/cntlCONTAINER2_LAYO/shellcont/shell");
-                    if(displayedColumnGrid.RowCount>0)
-                    {
-                        displayedColumnGrid.SelectAll();
-                        SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("APP_FL_SING").Press();
-                    }
-                    var columnSetGrid = SAPTestHelper.Current.PopupWindow.FindById<GuiGridView>("usr/tabsG_TS_ALV/tabpALV_M_R1/ssubSUB_DYN0510:SAPLSKBH:0620/cntlCONTAINER1_LAYO/shellcont/shell");
-
-
-                    string selectedRow = "";
-
-                    columnSetGrid.ClearSelection();
-                    for (int c = 0; c < columnSetGrid.RowCount; c++)
-                    {
-                        var col = columnSetGrid.GetCellValue(c, "SELTEXT");
-                        
-                        if (_dataOutputLayout.ContainsKey(col))
-                        {
-                            selectedRow += c.ToString() + ",";
-                            _dataOutputLayout[col]=c;
-                        }
-                        
-                    }
-
-
-                    columnSetGrid.SelectedRows = selectedRow;
-                    SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("APP_WL_SING").Press();
-
-
-                    SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
-
-                    //click filter button
-                    //h.MainWindow.FindByName<GuiButton>("btn[38]").Press();
-
-
-
-
-
-                    //var grid = h.PopupWindow.FindById<GuiGridView>("usr/subSUB_DYN0500:SAPLSKBH:0600/cntlCONTAINER2_FILT/shellcont/shell");
-                    //if (grid.RowCount > 0)
-                    //{
-                    //    grid.SelectAll();
-                    //   h.PopupWindow.FindByName<GuiButton>("APP_FL_SING").Press();
-                    //}
-
-                    //grid = h.PopupWindow.FindById<GuiGridView>("usr/subSUB_DYN0500:SAPLSKBH:0600/cntlCONTAINER1_FILT/shellcont/shell");
-                    //for (int j = 0; j < grid.RowCount; j++)
-                    //{
-                    //    if (grid.GetCellValueByDisplayColumn(j, "Column Name") == "Document Date")
-                    //    {
-                    //        grid.SelectedRows = j.ToString();
-                    //        h.PopupWindow.FindByName<GuiButton>("APP_WL_SING").Press();
-                    //        h.PopupWindow.FindByName<GuiButton>("600_BUTTON").Press();
-                    //        h.PopupWindow.FindByName<GuiCTextField>("%%DYN001-LOW").Text = data.DocDateFrom;
-                    //        h.PopupWindow.FindByName<GuiCTextField>("%%DYN001-HIGH").Text = data.DocDateTo;
-                    //        h.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
-                    //        break;
-                    //    }
-                    //}
+                    UIHelper.ChangeLayout(_dataOutputLayout);
+                    
 
                     DateTime end = DateTime.Now;
 
                     accounts[i].Period = end.Subtract(start);
 
-                   
-
                     string file = $"{accounts[i].Account}.txt";
 
                     accounts[i].DataCount = SAPTestHelper.Current.MainWindow.FindById<GuiGridView>("usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").RowCount;
 
-                    outputFile("mbar/menu[0]/menu[3]/menu[2]", _reportSourceDataDir, file);
+                    UIHelper.ExportFile("mbar/menu[0]/menu[3]/menu[2]", _reportSourceDataDir, file);
                 }
 
                 
@@ -452,7 +561,7 @@ namespace TestScript.Case1
         private void getGLAccount(Case1DataModel data)
         {           
             var step = _steps.Where(s => s.Id == 3).First();
-            //OnProcess(step);
+            process(step);
 
             List<List<Tuple<int, string>>> accounts = new List<List<Tuple<int, string>>>();
             using (StreamReader sr = new StreamReader(_accountPath))
@@ -480,42 +589,42 @@ namespace TestScript.Case1
             SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("btn[8]").Press();
 
 
-            outputFile("mbar/menu[0]/menu[10]/menu[3]/menu[2]", _workDir, _glAccountFileName);
+            UIHelper.ExportFile("mbar/menu[0]/menu[10]/menu[3]/menu[2]", _workDir, _glAccountFileName);
            
             step.IsComplete = true;
         }
 
-        private void outputFile(string outputmenuId,string dir,string fileName)
-        {
-            SAPTestHelper.Current.MainWindow.FindById<GuiMenu>(outputmenuId).Select();
-            SAPTestHelper.Current.PopupWindow.FindByName<GuiRadioButton>("SPOPLI-SELFLAG").Select();
-            SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
+        //private void outputFile(string outputmenuId,string dir,string fileName)
+        //{
+        //    SAPTestHelper.Current.MainWindow.FindById<GuiMenu>(outputmenuId).Select();
+        //    SAPTestHelper.Current.PopupWindow.FindByName<GuiRadioButton>("SPOPLI-SELFLAG").Select();
+        //    SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
 
-            var filePath = Path.Combine(dir, fileName);
+        //    var filePath = Path.Combine(dir, fileName);
 
-            if (!Directory.Exists(dir))
-                Directory.CreateDirectory(dir);
+        //    if (!Directory.Exists(dir))
+        //        Directory.CreateDirectory(dir);
 
-            if (File.Exists(filePath))
-                File.Delete(filePath);
+        //    if (File.Exists(filePath))
+        //        File.Delete(filePath);
 
-            SAPTestHelper.Current.PopupWindow.FindByName<GuiCTextField>("DY_PATH").Text = dir;
-            SAPTestHelper.Current.PopupWindow.FindByName<GuiCTextField>("DY_FILENAME").Text = fileName;
+        //    SAPTestHelper.Current.PopupWindow.FindByName<GuiCTextField>("DY_PATH").Text = dir;
+        //    SAPTestHelper.Current.PopupWindow.FindByName<GuiCTextField>("DY_FILENAME").Text = fileName;
 
-            var windowName = SAPTestHelper.Current.MainWindow.Text;
+        //    var windowName = SAPTestHelper.Current.MainWindow.Text;
 
-            var ts = new CancellationTokenSource();
-            var ct = ts.Token;
+        //    var ts = new CancellationTokenSource();
+        //    var ct = ts.Token;
 
-            Task.Run(() => { UIHelper.SetAccess(windowName,ct); });
-            SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
-            ts.Cancel();
-        }
+        //    Task.Run(() => { UIHelper.SetAccess(windowName,ct); });
+        //    SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
+        //    ts.Cancel();
+        //}
 
         private void ReadData()
         {
             var step = _steps.First();
-            //OnProcess(step);
+            process(step);
             _dt = ExcelHelper.Current.Open("Case1_MTD_Analysis.xlsx").Read("Case1_MTD_Analysis");
             ExcelHelper.Current.Close();
             step.IsComplete = true;
