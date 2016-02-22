@@ -21,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -51,21 +52,19 @@
     <Reference Include="Young.Data">
       <HintPath>..\..\Young\Young.Data\bin\Debug\Young.Data.dll</HintPath>
     </Reference>
+    <Reference Include="Young.Excel.Interop">
+      <HintPath>..\..\Young\Young.Excel.Interop\bin\Debug\Young.Excel.Interop.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Attributes\ExcelFormulaAttribute.cs" />
-    <Compile Include="Attributes\ExcelStyleAttribute.cs" />
     <Compile Include="Case1\AccountModel.cs" />
     <Compile Include="Case1\Case1DataModel.cs" />
     <Compile Include="Case1\Case1DocInfoModel.cs" />
     <Compile Include="Case1\Case1ReportDataModel.cs" />
     <Compile Include="Case1\Case1_MTD_Analysis.cs" />
-    <Compile Include="Class1.cs" />
-    <Compile Include="DataRowExtension.cs" />
     <Compile Include="LoginDataModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UIHelper.cs" />
-    <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Case1_MTD_Analysis.xlsx">

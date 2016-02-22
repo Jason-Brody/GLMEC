@@ -11,6 +11,8 @@ using System.IO;
 using System.Threading;
 using CaseRunnerModel;
 using Ex = Microsoft.Office.Interop.Excel;
+using Young.Data.Extension;
+using Young.Excel.Interop.Extensions;
 
 namespace TestScript.Case1
 {
@@ -134,7 +136,8 @@ namespace TestScript.Case1
 
         private DataTable formatGlAccountData()
         {
-            var accountDatas = Utils.ReadStringToTable(Path.Combine(_workDir,_glAccountFileName), (s,s1) =>
+            
+            var accountDatas = Young.Data.Utils.ReadStringToTable(Path.Combine(_workDir,_glAccountFileName), (s,s1) =>
             {
                 string splitchar = "|";
                 if (!s.Contains(splitchar))
@@ -193,7 +196,7 @@ namespace TestScript.Case1
             step.TotalProcess = Directory.GetFiles(dir).Count();
             foreach (var f in Directory.GetFiles(dir))
             {
-                DataTable dt = Utils.ReadStringToTable(f, (s, h) =>
+                DataTable dt = Young.Data.Utils.ReadStringToTable(f, (s, h) =>
                 {
                     string splitChar = "|";
                     if (!s.Contains(splitChar) || s == h || s.Contains("*"))
@@ -212,17 +215,17 @@ namespace TestScript.Case1
                 foreach (DataRow dr in dt.Rows)
                 {
                     Case1ReportDataModel rp = new Case1ReportDataModel();
-                    rp.DocumentNumber = Utils.FillNumber(dr[1].ToString());
+                    rp.DocumentNumber =SAPAutomation.Utils.FillNumber(dr[1].ToString());
                     rp.DocType = dr[2].ToString();
                     rp.DocumentDate = dr[3].ToString();
-                    rp.AmtInlocalCur = Utils.GetAmount(dr[4].ToString());
+                    rp.AmtInlocalCur = SAPAutomation.Utils.GetAmount(dr[4].ToString());
                     rp.LocalCur = dr[5].ToString();
                     rp.PostingDate = dr[6].ToString();
                     rp.CompanyCode = dr[7].ToString();
-                    rp.AmtInGroupCur = Utils.GetAmount(dr[8].ToString());
+                    rp.AmtInGroupCur = SAPAutomation.Utils.GetAmount(dr[8].ToString());
                     rp.GroupCur = dr[9].ToString();
                     rp.Account = dr[10].ToString();
-                    rp.AmtInDocCur = Utils.GetAmount(dr[11].ToString());
+                    rp.AmtInDocCur = SAPAutomation.Utils.GetAmount(dr[11].ToString());
                     rp.DocCurrency = dr[12].ToString();
                     rp.EntryDate = dr[13].ToString();
 
@@ -298,7 +301,7 @@ namespace TestScript.Case1
                 {
                     if (table.GetCell(0,5).Text.ToLower()== cur.ToLower())
                     {
-                        rateDic[cur] = Utils.GetAmount(table.GetCell(0, 2).Text) / Utils.GetAmount(table.GetCell(0, 9).Text);
+                        rateDic[cur] = SAPAutomation.Utils.GetAmount(table.GetCell(0, 2).Text) / SAPAutomation.Utils.GetAmount(table.GetCell(0, 9).Text);
                     }
                 }
 
@@ -400,7 +403,7 @@ namespace TestScript.Case1
             var step = _steps.Where(s => s.Id == 8).First();
             initialStep(step);
 
-            var dt = Utils.ReadStringToTable(Path.Combine(_workDir, _docInfoFileName), (s, h) =>
+            var dt = Young.Data.Utils.ReadStringToTable(Path.Combine(_workDir, _docInfoFileName), (s, h) =>
             {
                 string splitChar = "|";
                 if (!s.Contains(splitChar) || s == h || s.Contains("*"))
@@ -425,7 +428,7 @@ namespace TestScript.Case1
             {
                 Case1DocInfoModel di = new Case1DocInfoModel();
                 di.CompanyCode = dr[1].ToString();
-                di.DocumentNumber =Utils.FillNumber(dr[2].ToString());
+                di.DocumentNumber = SAPAutomation.Utils.FillNumber(dr[2].ToString());
                 di.DocType = dr[3].ToString();
                 di.DocDate = dr[4].ToString();
                 di.PostingDate = dr[5].ToString();
@@ -464,7 +467,7 @@ namespace TestScript.Case1
                 step.CurrentProcess++;
             }
 
-            _reportData.Export(Path.Combine(_workDir, _reportFileName), "|");
+            _reportData.ExportToFile(Path.Combine(_workDir, _reportFileName), "|");
 
             step.IsComplete = true;
         }

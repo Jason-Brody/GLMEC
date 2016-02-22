@@ -13,6 +13,10 @@ using SAPAutomation;
 using SAPFEWSELib;
 using Ex = Microsoft.Office.Interop.Excel;
 using System.Reflection;
+using System.Security.Cryptography;
+using Young.Data.Extension;
+using Young.Excel.Interop.Extensions;
+using System.Threading;
 
 namespace CaseTrigger
 {
@@ -37,12 +41,63 @@ namespace CaseTrigger
             }
         }
 
+
+        const string KEY_64 = "VavicApp";//注意了，是8个字符，64位
+
+        const string IV_64 = "VavicApp";
+
+        public static string Encode(string data)
+        {
+            byte[] byKey = System.Text.ASCIIEncoding.ASCII.GetBytes(KEY_64);
+            byte[] byIV = System.Text.ASCIIEncoding.ASCII.GetBytes(IV_64);
+
+            DESCryptoServiceProvider cryptoProvider = new DESCryptoServiceProvider();
+            int i = cryptoProvider.KeySize;
+            MemoryStream ms = new MemoryStream();
+            CryptoStream cst = new CryptoStream(ms, cryptoProvider.CreateEncryptor(byKey, byIV), CryptoStreamMode.Write);
+
+            StreamWriter sw = new StreamWriter(cst);
+            sw.Write(data);
+            sw.Flush();
+            cst.FlushFinalBlock();
+            sw.Flush();
+            return Convert.ToBase64String(ms.GetBuffer(), 0, (int)ms.Length);
+
+        }
+
+        public static string Decode(string data)
+        {
+            byte[] byKey = System.Text.ASCIIEncoding.ASCII.GetBytes(KEY_64);
+            byte[] byIV = System.Text.ASCIIEncoding.ASCII.GetBytes(IV_64);
+
+            byte[] byEnc;
+            try
+            {
+                byEnc = Convert.FromBase64String(data);
+            }
+            catch
+            {
+                return null;
+            }
+
+            DESCryptoServiceProvider cryptoProvider = new DESCryptoServiceProvider();
+            MemoryStream ms = new MemoryStream(byEnc);
+            CryptoStream cst = new CryptoStream(ms, cryptoProvider.CreateDecryptor(byKey, byIV), CryptoStreamMode.Read);
+            StreamReader sr = new StreamReader(cst);
+            return sr.ReadToEnd();
+        }
+
         static void Main(string[] args)
         {
+            CancellationTokenSource cts = new CancellationTokenSource();
+            var token = cts.Token;
+            SetAccess("Data Browser",token);
 
+            string secerect = Encode("Zhou Yang");
+            Console.WriteLine(secerect);
+            Console.WriteLine(Decode(secerect));
 
-
-            Console.WriteLine(Utils.FillNumber("200000160"));
+            Console.WriteLine(SAPAutomation.Utils.FillNumber("200000160"));
             var _dt = ExcelHelper.Current.Open("Case1_MTD_Analysis.xlsx").Read("Case1_MTD_Analysis");
             ExcelHelper.Current.Close();
             var data = _dt.Rows[0].ToEntity<Case1DataModel>();
@@ -56,6 +111,46 @@ namespace CaseTrigger
 
 
         }
+
+        public static void SetAccess(string windowName, CancellationToken token)
+        {
+            if (token.IsCancellationRequested)
+                token.ThrowIfCancellationRequested();
+
+            bool isPress = false;
+            while (!isPress)
+            {
+
+                var e = TreeWalker.ControlViewWalker.GetFirstChild(AutomationElement.RootElement);
+
+                while (e != null)
+                {
+                    if (e.Current.Name.ToLower().Contains(windowName.ToLower()))
+                        break;
+                    var tempE = TreeWalker.ControlViewWalker.GetNextSibling(e);
+                    e = tempE;
+
+
+                }
+                if (e != null)
+                {
+                    var condition1 = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Button);
+                    var condition2 = new PropertyCondition(AutomationElement.AccessKeyProperty, "Alt+A");
+                    var andCondition = new AndCondition(condition1, condition2);
+                    var btnElement = e.FindFirst(TreeScope.Descendants, andCondition);
+                    if (btnElement != null)
+                    {
+                        var btn = btnElement.GetCurrentPattern(InvokePattern.Pattern) as InvokePattern;
+
+                        btn.Invoke();
+                        isPress = true;
+                    }
+                }
+            }
+
+        }
+
+
 
         private static void format(object worksheet)
         {
@@ -178,7 +273,7 @@ namespace CaseTrigger
 
             foreach (var f in Directory.GetFiles(dir))
             {
-                DataTable dt = Utils.ReadStringToTable(f, (s, h) =>
+                DataTable dt = Young.Data.Utils.ReadStringToTable(f, (s, h) =>
                 {
                     string splitChar = "|";
                     if (!s.Contains(splitChar) || s == h || s.Contains("*"))
@@ -200,14 +295,14 @@ namespace CaseTrigger
                     rp.DocumentNumber = dr[1].ToString();
                     rp.DocType = dr[2].ToString();
                     rp.DocumentDate = dr[3].ToString();
-                    rp.AmtInlocalCur = Utils.GetAmount(dr[4].ToString());
+                    rp.AmtInlocalCur = SAPAutomation.Utils.GetAmount(dr[4].ToString());
                     rp.LocalCur = dr[5].ToString();
                     rp.PostingDate = dr[6].ToString();
                     rp.CompanyCode = dr[7].ToString();
-                    rp.AmtInGroupCur = Utils.GetAmount(dr[8].ToString());
+                    rp.AmtInGroupCur = SAPAutomation.Utils.GetAmount(dr[8].ToString());
                     rp.GroupCur = dr[9].ToString();
                     rp.Account = dr[10].ToString();
-                    rp.AmtInDocCur = Utils.GetAmount(dr[11].ToString());
+                    rp.AmtInDocCur = SAPAutomation.Utils.GetAmount(dr[11].ToString());
                     rp.DocCurrency = dr[12].ToString();
                     rp.EntryDate = dr[13].ToString();
 
@@ -238,7 +333,7 @@ namespace CaseTrigger
                 }
             }
 
-            report.Export("test.csv", "|");
+            report.ExportToFile("test.csv", "|");
             return report;
 
         }

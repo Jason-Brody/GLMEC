@@ -15,12 +15,14 @@ namespace TestScript
     {
         public static void SetAccess(string windowName,CancellationToken token)
         {
-            if (token.IsCancellationRequested)
-                token.ThrowIfCancellationRequested();
+            
 
             bool isPress = false;
             while(!isPress)
             {
+                if (token.IsCancellationRequested)
+                    break;
+
                 var e = TreeWalker.ControlViewWalker.GetFirstChild(AutomationElement.RootElement);
 
                 while (e != null)
@@ -29,18 +31,29 @@ namespace TestScript
                         break;
                     var tempE = TreeWalker.ControlViewWalker.GetNextSibling(e);
                     e = tempE;
-                    
-                    
                 }
+
                 if (e != null)
                 {
-                    var condition1 = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Button);
+                    var condition1 = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.CheckBox);
+                    var checkboxElement = e.FindFirst(TreeScope.Descendants, condition1);
+                    if (checkboxElement != null)
+                    {
+                        var checkbox = checkboxElement.GetCurrentPattern(TogglePattern.Pattern) as TogglePattern;
+                        if (checkbox.Current.ToggleState == ToggleState.Off)
+                        {
+                            checkbox.Toggle();
+                        }
+                    }
+
+                    condition1 = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Button);
                     var condition2 = new PropertyCondition(AutomationElement.AccessKeyProperty, "Alt+A");
                     var andCondition = new AndCondition(condition1, condition2);
                     var btnElement = e.FindFirst(TreeScope.Descendants, andCondition);
                     if (btnElement != null)
                     {
                         var btn = btnElement.GetCurrentPattern(InvokePattern.Pattern) as InvokePattern;
+                        
                         btn.Invoke();
                         isPress = true;
                     }

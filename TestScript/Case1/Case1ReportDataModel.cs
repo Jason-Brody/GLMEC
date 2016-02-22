@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TestScript.Attributes;
+using Young.Data.Attributes;
+using Young.Excel.Interop.Attributes;
 
 namespace TestScript.Case1
 {
