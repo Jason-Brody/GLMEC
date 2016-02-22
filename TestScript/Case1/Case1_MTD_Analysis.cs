@@ -29,7 +29,7 @@ namespace TestScript.Case1
 
         public Case1_MTD_Analysis()
         {
-            _steps.Add(new StepInfo() { Id = 1, Name = "Read GL Account Data from txt file", IsProcessKnown = false });
+            _steps.Add(new StepInfo() { Id = 1, Name = "Read Config Data", IsProcessKnown = false });
             _steps.Add(new StepInfo() { Id = 2, Name = "Login to LH", IsProcessKnown = false });
             _steps.Add(new StepInfo() { Id = 3, Name = "Get GL Accounts", IsProcessKnown = true });
             _steps.Add(new StepInfo() { Id = 4, Name = "Get Report Data", IsProcessKnown = true });
@@ -69,8 +69,17 @@ namespace TestScript.Case1
             }
         }
 
+        private void initialStep(StepInfo s)
+        {
+            process(s);
+            s.IsComplete = false;
+            s.CurrentProcess = 0;
+            s.TotalProcess = 0;
+        }
+
         private void setCondig(Case1DataModel data)
         {
+            _steps.Where(s=>s.Id > 1).ToList().ForEach(s => { s.IsComplete = false; s.CurrentProcess = 0; s.TotalProcess = 0; });
             var baseDir = AppDomain.CurrentDomain.BaseDirectory;
             _workDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ReportData", data.CompanyCode);
             _tempDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Temp");
@@ -118,6 +127,8 @@ namespace TestScript.Case1
                 generateReport(curDic);
 
                 formatReport();
+
+                SAPTestHelper.Current.SAPGuiConnection.CloseConnection();
             }
         }
 
@@ -143,7 +154,7 @@ namespace TestScript.Case1
         {
 
             var step = _steps.Where(s => s.Id == 5).First();
-            process(step);
+            initialStep(step);
             List<Case1ReportDataModel> report = new List<Case1ReportDataModel>();
 
             //Dictionary<string, int> dic = new Dictionary<string, int>();
@@ -179,7 +190,6 @@ namespace TestScript.Case1
             //{
             //    mergeTable.Columns.Add(item.Key);
             //}
-            step.CurrentProcess = 0;
             step.TotalProcess = Directory.GetFiles(dir).Count();
             foreach (var f in Directory.GetFiles(dir))
             {
@@ -251,7 +261,7 @@ namespace TestScript.Case1
         private Dictionary<string,float> getCurrency()
         {
             var step = _steps.Where(s => s.Id == 6).First();
-            process(step);
+            initialStep(step);
 
             var curList = new List<string>();
             curList.AddRange(_reportData.Where(c=>c.DocCurrency.ToLower()!="usd").GroupBy(g => g.DocCurrency).Select(s => s.Key));
@@ -270,7 +280,6 @@ namespace TestScript.Case1
                 SAPTestHelper.Current.MainWindow.SendKey(SAPKeys.Ctrl_F4);
             }
 
-            step.CurrentProcess = 0;
             step.TotalProcess = rateDic.Count;
 
             for (int i =0;i<rateDic.Count;i++)
@@ -335,7 +344,7 @@ namespace TestScript.Case1
         private void getDocInfo(Case1DataModel data)
         {
             var step = _steps.Where(s => s.Id == 7).First();
-            process(step);
+            initialStep(step);
 
             if (_reportData.Count>0)
             {
@@ -346,7 +355,8 @@ namespace TestScript.Case1
                 SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("%_I2_%_APP_%-VALU_PUSH").Press();
                 var table = SAPTestHelper.Current.PopupWindow.FindByName<GuiTableControl>("SAPLALDBSINGLE");
                 var docList = _reportData.Select(r => new List<Tuple<int, string>>() { new Tuple<int, string>(1, r.DocumentNumber) }).ToList();
-                table.SetBatchValues(docList);
+                step.TotalProcess = docList.Count;
+                table.SetBatchValues(docList,i=> { step.CurrentProcess++; });
                 SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[8]").Press();
 
                 SAPTestHelper.Current.MainWindow.FindByName<GuiTextField>("I3-LOW").Text = "2016";
@@ -388,7 +398,7 @@ namespace TestScript.Case1
         private void generateReport(Dictionary<string,float> curDic)
         {
             var step = _steps.Where(s => s.Id == 8).First();
-            process(step);
+            initialStep(step);
 
             var dt = Utils.ReadStringToTable(Path.Combine(_workDir, _docInfoFileName), (s, h) =>
             {
@@ -461,18 +471,59 @@ namespace TestScript.Case1
 
         private void formatReport()
         {
+            var step = _steps.Where(s => s.Id == 9).First();
+            initialStep(step);
+
             string sheetName = "MTD Analysis";
 
-            _reportData.ExportToExcel("result.xlsx", sheetName);
+            _reportData.ExportToExcel(Path.Combine(_workDir,"result.xlsx"), sheetName,(s)=> {
 
-            
+                var sheet = s as Ex.Worksheet;
+
+                var range = sheet.Cells[2, 1] as Ex.Range;
+
+                range.EntireRow.Insert();
+
+                range = sheet.Range[sheet.Cells[2, 1], sheet.Cells[2, 25]] as Ex.Range;
+                range.Interior.Color = 16777215;
+
+                range = sheet.Range[sheet.Cells[1, 21], sheet.Cells[1, 25]] as Ex.Range;
+                range.Copy();
+
+                range = sheet.Range[sheet.Cells[2, 21], sheet.Cells[2, 25]] as Ex.Range;
+                range.PasteSpecial(Ex.XlPasteType.xlPasteAll);
+
+                range = sheet.Range[sheet.Cells[1, 21], sheet.Cells[1, 22]] as Ex.Range;
+                range.Value = "";
+                range.Merge();
+
+                range.Value = "Check between OB08 and TC";
+                range.Interior.Color = 255;
+                range.HorizontalAlignment = Ex.XlHAlign.xlHAlignCenter;
+                range.VerticalAlignment = Ex.XlVAlign.xlVAlignBottom;
+                range.Font.Bold = true;
+                range.Font.Size = 10;
+
+                range = sheet.Range[sheet.Cells[1, 23], sheet.Cells[1, 25]] as Ex.Range;
+                range.Value = "";
+                range.Merge();
+
+                range.Value = "Delta Check";
+                range.Interior.Color = 49407;
+                range.HorizontalAlignment = Ex.XlHAlign.xlHAlignCenter;
+                range.VerticalAlignment = Ex.XlVAlign.xlVAlignCenter;
+                range.Font.Bold = true;
+                range.Font.Size = 10;
+            });
+
+            step.IsComplete = true;
 
         }
 
         private void login(LoginDataModel data)
         {
             var step = _steps.Where(s => s.Id == 2).First();
-            process(step);
+            initialStep(step);
             SAPLogon l = new SAPLogon();
             l.StartProcess();
             l.OpenConnection(data.Address);
@@ -484,7 +535,8 @@ namespace TestScript.Case1
         private void getData(Case1DataModel data, DataTable accountData)
         {
             var step = _steps.Where(s => s.Id == 4).First();
-            process(step);
+            initialStep(step);
+
             List<AccountModel> accounts = new List<AccountModel>();
 
             foreach (DataRow dr in accountData.Rows)
@@ -494,7 +546,6 @@ namespace TestScript.Case1
             }
 
             step.TotalProcess = accounts.Count;
-            step.CurrentProcess = 1;
             for (int i = 0; i < accounts.Count; i++)
             {
                 //List<List<Tuple<int, string>>> testAccounts = accounts.Skip(i*10).Take(10).Select(
@@ -561,7 +612,7 @@ namespace TestScript.Case1
         private void getGLAccount(Case1DataModel data)
         {           
             var step = _steps.Where(s => s.Id == 3).First();
-            process(step);
+            initialStep(step);
 
             List<List<Tuple<int, string>>> accounts = new List<List<Tuple<int, string>>>();
             using (StreamReader sr = new StreamReader(_accountPath))
@@ -573,6 +624,8 @@ namespace TestScript.Case1
 
             }
 
+            step.TotalProcess = accounts.Count;
+
             SAPTestHelper.Current.SAPGuiSession.StartTransaction("SE16");
 
             SAPTestHelper.Current.SAPGuiSession.FindById<GuiCTextField>("wnd[0]/usr/ctxtDATABROWSE-TABLENAME").Text = "SKB1";
@@ -582,7 +635,7 @@ namespace TestScript.Case1
             SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("%_I2_%_APP_%-VALU_PUSH").Press();
 
             var table = SAPTestHelper.Current.PopupWindow.FindByName<GuiTableControl>("SAPLALDBSINGLE");
-            table.SetBatchValues(accounts);
+            table.SetBatchValues(accounts,(i)=> { step.CurrentProcess++; });
 
             SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[8]").Press();
             SAPTestHelper.Current.MainWindow.FindByName<GuiTextField>("MAX_SEL").Text = "10000";
@@ -624,7 +677,7 @@ namespace TestScript.Case1
         private void ReadData()
         {
             var step = _steps.First();
-            process(step);
+            initialStep(step);
             _dt = ExcelHelper.Current.Open("Case1_MTD_Analysis.xlsx").Read("Case1_MTD_Analysis");
             ExcelHelper.Current.Close();
             step.IsComplete = true;

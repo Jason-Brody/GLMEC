@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Office.Interop.Excel;
 
 namespace TestScript.Attributes
 {
@@ -32,6 +33,16 @@ namespace TestScript.Attributes
 
         public int BackgroundColor { get; set; } 
 
-        public double Width { get; set; } 
+        public double Width { get; set; }
+
+        public XlHAlign HAlign { get; set; } = XlHAlign.xlHAlignCenter;
+
+        public XlVAlign VAlign { get; set; } = XlVAlign.xlVAlignBottom;
+
+        public bool IsFontBold { get; set; } = true;
+
+        public int FontSize { get; set; } = 10;
+
+        
     }
 }

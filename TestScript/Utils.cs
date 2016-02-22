@@ -4,6 +4,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using TestScript.Attributes;
 using Ex = Microsoft.Office.Interop.Excel;
@@ -121,85 +122,141 @@ namespace TestScript
             }
         }
 
-        public static void ExportToExcel<T>(this IEnumerable<T> Data, string fileName, string sheetName) where T : class
+        public static void ExportToExcel<T>(this IEnumerable<T> Data, string fileName, string sheetName, Action<object> otherAction) where T : class
         {
+           
+
             List<PropertyInfo> props = typeof(T).GetProperties().Where(p => (p.PropertyType == typeof(string) || p.PropertyType.IsValueType) && p.DeclaringType.IsPublic).ToList();
             Ex.Application app = new Ex.Application();
             app.Visible = true;
-            var wb = app.Workbooks.Add();
+
+            var wbs = app.Workbooks;
+            var wb = wbs.Add();
 
             var sheet = wb.ActiveSheet as Ex.Worksheet;
 
             sheet.Name = sheetName;
 
-            object[,] datas = new object[Data.Count() + 1, props.Count];
+            Ex.Range range = sheet.Range[sheet.Cells[1, 1], sheet.Cells[1 + Data.Count(), props.Count]];
 
-            List<Tuple<string, int>> formualList = new List<Tuple<string, int>>();
-
-
-            for (int i = 0; i < props.Count; i++)
+            try
             {
-                var attr = props[i].GetCustomAttribute<AliasAttribute>();
-                if (attr != null)
-                    datas[0, i] = attr.Name;
-                else
-                    datas[0, i] = props[i].Name;
 
-                var formulaAttr = props[i].GetCustomAttribute<ExcelFormulaAttribute>();
-                if (formulaAttr != null)
+                object[,] datas = new object[Data.Count() + 1, props.Count];
+
+                List<Tuple<string, int>> formualList = new List<Tuple<string, int>>();
+
+
+                for (int i = 0; i < props.Count; i++)
                 {
-                    Tuple<string, int> item = new Tuple<string, int>(formulaAttr.Formula, i + 1);
-                    formualList.Add(item);
-                }
-            }
+                    var attr = props[i].GetCustomAttribute<AliasAttribute>();
+                    if (attr != null)
+                        datas[0, i] = attr.Name;
+                    else
+                        datas[0, i] = props[i].Name;
 
-            for (int i = 0; i < Data.Count(); i++)
-            {
-                for (int j = 0; j < props.Count; j++)
-                {
-                    var val = props[j].GetValue(Data.ElementAt(i));
-                    datas[i + 1, j] = val;
-                }
-            }
-
-            Ex.Range startRange = sheet.Cells[1, 1];
-            Ex.Range endRange = sheet.Cells[1 + Data.Count(), props.Count];
-            Ex.Range range = sheet.Range[startRange, endRange];
-            range.Value = datas;
-
-            for (int i = 0; i < props.Count; i++)
-            {
-                var headerRange = sheet.Cells[1, i + 1] as Ex.Range;
-                var attr = props[i].GetCustomAttribute<ExcelHeaderStyleAttribute>();
-                if (attr != null)
-                {
-                    headerRange.Interior.Color = attr.BackgroundColor;
-                    headerRange.EntireColumn.NumberFormat = attr.NumberFormat;
-                    headerRange.ColumnWidth = attr.Width;
-                    headerRange.WrapText = attr.IsTextWrap;
-                }
-            }
-
-
-            if (formualList.Count > 0)
-            {
-                foreach (var item in formualList)
-                {
-                    Ex.Range formulaRange = (sheet.Cells[2, item.Item2] as Ex.Range);
-                    formulaRange.Formula = item.Item1;
-                    formulaRange.AutoFill(sheet.Range[sheet.Cells[2, item.Item2], sheet.Cells[Data.Count()+1, item.Item2]], Ex.XlAutoFillType.xlFillDefault);
-
-                   
+                    var formulaAttr = props[i].GetCustomAttribute<ExcelFormulaAttribute>();
+                    if (formulaAttr != null)
+                    {
+                        Tuple<string, int> item = new Tuple<string, int>(formulaAttr.Formula, i + 1);
+                        formualList.Add(item);
+                    }
                 }
 
+                for (int i = 0; i < Data.Count(); i++)
+                {
+                    for (int j = 0; j < props.Count; j++)
+                    {
+                        var val = props[j].GetValue(Data.ElementAt(i));
+                        datas[i + 1, j] = val;
+                    }
+                }
+
+
+               
+                range.Value = datas;
+
+
+                for (int i = 0; i < props.Count; i++)
+                {
+                    range = sheet.Cells[1, i + 1];
+                    
+                    var attr = props[i].GetCustomAttribute<ExcelHeaderStyleAttribute>();
+                    if (attr != null)
+                    {
+                        range.Interior.Color = attr.BackgroundColor;
+                        range.EntireColumn.NumberFormat = attr.NumberFormat;
+                        range.ColumnWidth = attr.Width;
+                        range.Font.Bold = attr.IsFontBold;
+                        range.Font.Size = attr.FontSize;
+                        range.WrapText = attr.IsTextWrap;
+                        range.HorizontalAlignment = attr.HAlign;
+                        range.VerticalAlignment = attr.VAlign;
+                    }
+                }
+
+
+
+                if (formualList.Count > 0)
+                {
+                    foreach (var item in formualList)
+                    {
+                        range = sheet.Cells[2, item.Item2];
+                        range.Formula = item.Item1;
+                        range.AutoFill(sheet.Range[sheet.Cells[2, item.Item2], sheet.Cells[Data.Count() + 1, item.Item2]], Ex.XlAutoFillType.xlFillDefault);
+                    }
+
+                }
+
+
+                otherAction(sheet);
+
+                range = sheet.UsedRange;
+
+                range.Borders[Ex.XlBordersIndex.xlEdgeLeft].LineStyle = Ex.XlLineStyle.xlContinuous;
+                range.Borders[Ex.XlBordersIndex.xlEdgeTop].LineStyle = Ex.XlLineStyle.xlContinuous;
+                range.Borders[Ex.XlBordersIndex.xlEdgeRight].LineStyle = Ex.XlLineStyle.xlContinuous;
+                range.Borders[Ex.XlBordersIndex.xlEdgeBottom].LineStyle = Ex.XlLineStyle.xlContinuous;
+                range.Borders.Color = ConsoleColor.Black;
+
+
+                range = sheet.Cells[1, 1] as Ex.Range;
+                range.Select();
+
+
+                if (File.Exists(fileName))
+                    File.Delete(fileName);
+                wb.SaveAs(fileName);
+
+
+                wb.Close();
+                app.Quit();
+
             }
 
+            catch (Exception ex)
+            {
+                throw (ex);
+            }
 
-            range.Borders[Ex.XlBordersIndex.xlEdgeLeft].LineStyle = Ex.XlLineStyle.xlContinuous;
-            range.Borders[Ex.XlBordersIndex.xlEdgeTop].LineStyle = Ex.XlLineStyle.xlContinuous;
-            range.Borders[Ex.XlBordersIndex.xlEdgeRight].LineStyle = Ex.XlLineStyle.xlContinuous;
-            range.Borders[Ex.XlBordersIndex.xlEdgeBottom].LineStyle = Ex.XlLineStyle.xlContinuous;
-            range.Borders.Color = ConsoleColor.Black;
+            finally
+            {
+                Marshal.ReleaseComObject(range);
+                range = null;
+                Marshal.ReleaseComObject(sheet);
+                sheet = null;
+                Marshal.ReleaseComObject(wb);
+                wb = null;
+                Marshal.ReleaseComObject(wbs);
+                wbs = null;
+                Marshal.ReleaseComObject(app);
+                app = null;
+
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
 
         }
 

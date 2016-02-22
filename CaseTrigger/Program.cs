@@ -18,21 +18,83 @@ namespace CaseTrigger
 {
     class Program
     {
+        static void DoIt()
+        {
+            try
+            {
+                Console.WriteLine("inner try");
+                int i = 0;
+                Console.WriteLine(12 / i); // oops
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("inner catch");
+                throw e; // or "throw", or "throw anything"
+            }
+            finally
+            {
+                Console.WriteLine("inner finally");
+            }
+        }
+
         static void Main(string[] args)
         {
+
+
 
             Console.WriteLine(Utils.FillNumber("200000160"));
             var _dt = ExcelHelper.Current.Open("Case1_MTD_Analysis.xlsx").Read("Case1_MTD_Analysis");
             ExcelHelper.Current.Close();
             var data = _dt.Rows[0].ToEntity<Case1DataModel>();
             var datas = mergeData(@"E:\GitHub\GLMEC\CaseTrigger\bin\Debug\ReportData\DE50\Datas");
-            datas.ExportToExcel("test.xlsx", "MTD Analysis");
-            Console.WriteLine(DateTime.Now);
-            Console.WindowHeight = 1;
-            Console.WindowWidth = 1;
-            Case1_MTD_Analysis case1 = new Case1_MTD_Analysis();
-            case1.Run();
+            datas.ExportToExcel(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "test.xlsx"), "MTD Analysis", (s) => { format(s); });
+            //Console.WriteLine(DateTime.Now);
+            //Console.WindowHeight = 1;
+            //Console.WindowWidth = 1;
+            //Case1_MTD_Analysis case1 = new Case1_MTD_Analysis();
+            //case1.Run();
 
+
+        }
+
+        private static void format(object worksheet)
+        {
+            var sheet= worksheet as Ex.Worksheet;
+
+            var range = sheet.Cells[2, 1] as Ex.Range;
+
+            range.EntireRow.Insert();
+
+            range = sheet.Range[sheet.Cells[2, 1], sheet.Cells[2, 25]] as Ex.Range;
+            range.Interior.Color = 16777215;
+
+            range = sheet.Range[sheet.Cells[1, 21], sheet.Cells[1, 25]] as Ex.Range;
+            range.Copy();
+
+            range = sheet.Range[sheet.Cells[2, 21], sheet.Cells[2, 25]] as Ex.Range;
+            range.PasteSpecial(Ex.XlPasteType.xlPasteAll);
+
+            range = sheet.Range[sheet.Cells[1, 21], sheet.Cells[1, 22]] as Ex.Range;
+            range.Value = "";
+            range.Merge();
+
+            range.Value = "Check between OB08 and TC";
+            range.Interior.Color = 255;
+            range.HorizontalAlignment = Ex.XlHAlign.xlHAlignCenter;
+            range.VerticalAlignment = Ex.XlVAlign.xlVAlignBottom;
+            range.Font.Bold = true;
+            range.Font.Size = 10;
+
+            range = sheet.Range[sheet.Cells[1, 23], sheet.Cells[1, 25]] as Ex.Range;
+            range.Value = "";
+            range.Merge();
+
+            range.Value = "Delta Check";
+            range.Interior.Color = 49407;
+            range.HorizontalAlignment = Ex.XlHAlign.xlHAlignCenter;
+            range.VerticalAlignment = Ex.XlVAlign.xlVAlignCenter;
+            range.Font.Bold = true;
+            range.Font.Size = 10;
 
         }
 
