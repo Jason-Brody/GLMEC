@@ -275,7 +275,7 @@ namespace TestScript.Case1
 
             DateTime date = DateTime.Now;
             var firstDayOfMonth = new DateTime(date.Year, date.Month, 1);
-            string d = date.ToString("dd.MM.yyyy");
+            string d = firstDayOfMonth.ToString("dd.MM.yyyy");
 
             if(rateDic.Count>0)
             {

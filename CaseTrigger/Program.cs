@@ -89,10 +89,14 @@ namespace CaseTrigger
 
         static void Main(string[] args)
         {
+
+            var firstDayOfMonth = new DateTime(2016,2, 1);
+            string d = firstDayOfMonth.ToString("dd.MM.yyyy");
+
             CancellationTokenSource cts = new CancellationTokenSource();
             var token = cts.Token;
-            SetAccess("Data Browser",token);
-
+            SetAccess("Account Line",token);
+            
             string secerect = Encode("Zhou Yang");
             Console.WriteLine(secerect);
             Console.WriteLine(Decode(secerect));
