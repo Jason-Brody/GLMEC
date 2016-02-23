@@ -17,6 +17,7 @@ using System.Security.Cryptography;
 using Young.Data.Extension;
 using Young.Excel.Interop.Extensions;
 using System.Threading;
+using System.Diagnostics;
 
 namespace CaseTrigger
 {
@@ -89,6 +90,10 @@ namespace CaseTrigger
 
         static void Main(string[] args)
         {
+            
+            
+
+
             CancellationTokenSource cts = new CancellationTokenSource();
             var token = cts.Token;
             SetAccess("Data Browser",token);

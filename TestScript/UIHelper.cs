@@ -2,6 +2,7 @@
 using SAPFEWSELib;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -111,13 +112,22 @@ namespace TestScript
             SAPTestHelper.Current.PopupWindow.FindByName<GuiCTextField>("DY_FILENAME").Text = fileName;
 
             var windowName = SAPTestHelper.Current.MainWindow.Text;
+            var args = "\"" + windowName + "\"";
 
-            var ts = new CancellationTokenSource();
-            var ct = ts.Token;
 
-            Task.Run(() => { UIHelper.SetAccess(windowName, ct); });
+            ProcessStartInfo psi = new ProcessStartInfo();
+            psi.FileName = "SAPGuiHelper.exe";
+            psi.Arguments = args;
+            var p = Process.Start(psi);
+            //var ts = new CancellationTokenSource();
+            //var ct = ts.Token;
+
+            //Task.Run(() => { UIHelper.SetAccess(windowName, ct); });
             SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
-            ts.Cancel();
+            //ts.Cancel();
+            p = Process.GetProcessById(p.Id);
+            if (p != null)
+                p.Kill();
         }
     }
 }

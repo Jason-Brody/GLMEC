@@ -51,10 +51,10 @@
     <Reference Include="UIAutomationProvider" />
     <Reference Include="UIAutomationTypes" />
     <Reference Include="Young.Data">
-      <HintPath>..\..\Young\Young.Data\bin\Debug\Young.Data.dll</HintPath>
+      <HintPath>..\..\Github\Young\Young.Excel.Interop\bin\Debug\Young.Data.dll</HintPath>
     </Reference>
     <Reference Include="Young.Excel.Interop">
-      <HintPath>..\..\Young\Young.Excel.Interop\bin\Debug\Young.Excel.Interop.dll</HintPath>
+      <HintPath>..\..\Github\Young\Young.Excel.Interop\bin\Debug\Young.Excel.Interop.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -95,6 +95,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Case1\Accountlist.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="SAPGuiHelper.exe">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

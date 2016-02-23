@@ -275,7 +275,7 @@ namespace TestScript.Case1
 
             DateTime date = DateTime.Now;
             var firstDayOfMonth = new DateTime(date.Year, date.Month, 1);
-            string d = date.ToString("dd.MM.yyyy");
+            string d = firstDayOfMonth.ToString("dd.MM.yyyy");
 
             if(rateDic.Count>0)
             {
@@ -362,7 +362,17 @@ namespace TestScript.Case1
                 table.SetBatchValues(docList,i=> { step.CurrentProcess++; });
                 SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[8]").Press();
 
-                SAPTestHelper.Current.MainWindow.FindByName<GuiTextField>("I3-LOW").Text = "2016";
+                var datetimeArray = data.PostingDateFrom.Split('.');
+
+                var startFiscalYear = data.PostingStartDate.AddMonths(2).Year;
+                var endFiscalYear = data.PostingEndDate.AddMonths(2).Year;
+
+                SAPTestHelper.Current.MainWindow.FindByName<GuiTextField>("I3-LOW").Text = startFiscalYear.ToString();
+
+                if (startFiscalYear != endFiscalYear)
+                    SAPTestHelper.Current.MainWindow.FindByName<GuiTextField>("I3-HIGH").Text = endFiscalYear.ToString();
+
+
                 SAPTestHelper.Current.MainWindow.FindByName<GuiCTextField>("I6-LOW").Text = data.PostingDateFrom;
                 SAPTestHelper.Current.MainWindow.FindByName<GuiCTextField>("I6-HIGH").Text = data.PostingDateTo;
                 SAPTestHelper.Current.MainWindow.FindByName<GuiTextField>("MAX_SEL").Text = "10000";

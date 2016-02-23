@@ -54,7 +54,7 @@
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
     <Reference Include="SAPAutomation">
-      <HintPath>..\..\SAPGuiAutomationLib\SAPAutomation\bin\Debug\SAPAutomation.dll</HintPath>
+      <HintPath>..\..\Github\SAPGuiAutomationLib\SAPAutomation\bin\Debug\SAPAutomation.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -70,10 +70,10 @@
     <Reference Include="UIAutomationTypes" />
     <Reference Include="Young.Data, Version=1.2.0.1, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Young\Young.Data\bin\Debug\Young.Data.dll</HintPath>
+      <HintPath>..\..\Github\Young\Young.Data\bin\Debug\Young.Data.dll</HintPath>
     </Reference>
     <Reference Include="Young.Excel.Interop">
-      <HintPath>..\..\Young\Young.Excel.Interop\bin\Debug\Young.Excel.Interop.dll</HintPath>
+      <HintPath>..\..\Github\Young\Young.Excel.Interop\bin\Debug\Young.Excel.Interop.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
