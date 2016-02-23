@@ -97,9 +97,6 @@
     <Content Include="Case1\Accountlist.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="SAPGuiHelper.exe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CaseRunnerModel\CaseRunnerModel.csproj">

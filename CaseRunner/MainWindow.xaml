@@ -9,6 +9,7 @@
         Title="MainWindow" Height="350" Width="525">
     <Window.Resources>
         <cv:ProcessConverter x:Key="ProcessConverter"/>
+        <cv:BoolReverseConverter x:Key="BoolReverseConverter"/>
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -46,19 +47,20 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <ComboBox x:Name="cb_Cases" ItemsSource="{Binding}"  SelectedValuePath="Info.Name" SelectionChanged="cb_Cases_SelectionChanged">
+            <TextBlock x:Name="tb_Period" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center"/>
+            <!--<ComboBox x:Name="cb_Cases" ItemsSource="{Binding}"  SelectedValuePath="Info.Name" SelectionChanged="cb_Cases_SelectionChanged">
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock Text="{Binding Info.Name}"/>
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
-            </ComboBox>
-            <Button Grid.Row="1" x:Name="btn_Load" Content="Load Case" Click="btn_Load_Click"/>
-            <Button Grid.Row="2" x:Name="btn_Run" Content="Run!" Click="btn_Run_Click"/>
+            </ComboBox>-->
+            <!--<Button Grid.Row="1" x:Name="btn_Load" Content="Load Case" Click="btn_Load_Click"/>-->
+            <Button Grid.Row="1" Grid.RowSpan="2" x:Name="btn_Run" Content="Run!" Click="btn_Run_Click"/>
         </Grid>
 
         <Grid Grid.ColumnSpan="2" Grid.Row="1">
-            <ProgressBar x:Name="pb"  Maximum="{Binding TotalProcess}" Value="{Binding CurrentProcess}" />
+            <ProgressBar x:Name="pb"  Maximum="{Binding TotalProcess}" Value="{Binding CurrentProcess}" IsIndeterminate="{Binding IsProcessKnown,Converter={StaticResource BoolReverseConverter}}"/>
             <TextBlock x:Name="tb_Process" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16" FontWeight="Bold" >
                 <TextBlock.Text>
                     <MultiBinding Converter="{StaticResource ProcessConverter}">

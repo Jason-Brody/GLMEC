@@ -15,6 +15,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using TestScript.Case1;
+using System.Timers;
 
 namespace CaseRunner
 {
@@ -56,12 +57,41 @@ namespace CaseRunner
                     tb_Process.DataContext = s;
                 }));
             };
-            await Task.Run(() => _currentCase.Run());
 
+            DateTime start = DateTime.Now;
+            Timer t = new Timer();
+            t.Elapsed += (o, e1) => {
+                tb_Period.Dispatcher.BeginInvoke(new Action(()=> {
+                    tb_Period.Text = DateTime.Now.Subtract(start).ToString();
+                }));
+            };
+            t.Interval = TimeSpan.FromSeconds(1).Seconds;
+
+
+            btn_Run.IsEnabled = false;
+            t.Start();
+
+            try
+            {
+                await Task.Run(() => _currentCase.Run());
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            finally
+            {
+                btn_Run.IsEnabled = true;
+                pb.IsIndeterminate = false;
+                t.Stop();
+            }
+            
+
+            
 
         }
 
-
+        
 
         private void cb_Cases_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {

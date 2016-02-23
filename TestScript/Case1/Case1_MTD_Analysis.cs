@@ -31,8 +31,10 @@ namespace TestScript.Case1
 
         public Case1_MTD_Analysis()
         {
+
             _steps.Add(new StepInfo() { Id = 1, Name = "Read Config Data", IsProcessKnown = false });
             _steps.Add(new StepInfo() { Id = 2, Name = "Login to LH", IsProcessKnown = false });
+            _steps.Add(new StepInfo() { Id = 0, Name = "TCode acceess verification", IsProcessKnown = false });
             _steps.Add(new StepInfo() { Id = 3, Name = "Get GL Accounts", IsProcessKnown = true });
             _steps.Add(new StepInfo() { Id = 4, Name = "Get Report Data", IsProcessKnown = true });
             _steps.Add(new StepInfo() { Id = 5, Name = "Merge Report Data", IsProcessKnown = true });
@@ -47,7 +49,7 @@ namespace TestScript.Case1
             if (OnProcess != null)
                 OnProcess(step);
         }
-        
+
 
         private DataTable _dt;
 
@@ -77,19 +79,22 @@ namespace TestScript.Case1
             s.IsComplete = false;
             s.CurrentProcess = 0;
             s.TotalProcess = 0;
+            s.IsProcessKnown = false;
         }
 
         private void setCondig(Case1DataModel data)
         {
-            _steps.Where(s=>s.Id > 1).ToList().ForEach(s => { s.IsComplete = false; s.CurrentProcess = 0; s.TotalProcess = 0; });
+            _steps.Where(s => s.Id != 1).ToList().ForEach(s => { s.IsComplete = false; s.CurrentProcess = 0; s.TotalProcess = 0; });
             var baseDir = AppDomain.CurrentDomain.BaseDirectory;
             _workDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ReportData", data.CompanyCode);
+            if (Directory.Exists(_workDir))
+                Directory.Delete(_workDir, true);
             _tempDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Temp");
             _reportSourceDataDir = Path.Combine(_workDir, "Datas");
             _glAccountFileName = $"{data.CompanyCode}.txt";
             _accountPath = @"Case1\Accountlist.txt";
             _dataOutputLayout = new Dictionary<string, int>() { };
-            _dataOutputLayout.Add("Company Code",-1);
+            _dataOutputLayout.Add("Company Code", -1);
             _dataOutputLayout.Add("Account", -1);
             _dataOutputLayout.Add("Document Number", -1);
             _dataOutputLayout.Add("Document Type", -1);
@@ -115,14 +120,14 @@ namespace TestScript.Case1
                 var data = dr.ToEntity<Case1DataModel>();
                 setCondig(data);
                 login(data);
-
+                tcodeAccessVerification();
                 getGLAccount(data);
 
-                getData(data, formatGlAccountData());
+                getReportData(data, formatGlAccountData());
 
                 _reportData = mergeData(_reportSourceDataDir);
 
-                var curDic = getCurrency();
+                var curDic = getCurrency(data);
 
                 getDocInfo(data);
 
@@ -134,22 +139,62 @@ namespace TestScript.Case1
             }
         }
 
+        private void tcodeAccessVerification()
+        {
+            var step = _steps.Where(s => s.Id == 0).First();
+            initialStep(step);
+            verfifyTode("OB08");
+
+            verfifyTode("FAGLL03");
+            verfifyTode("SE16", () =>
+            {
+                var page = SAPTestHelper.Current.SAPGuiSession.Info.ScreenNumber;
+                SAPTestHelper.Current.MainWindow.FindByName<GuiCTextField>("DATABROWSE-TABLENAME").Text = "BKPF";
+                SAPTestHelper.Current.MainWindow.SendKey(SAPKeys.Enter);
+                var page1 = SAPTestHelper.Current.SAPGuiSession.Info.ScreenNumber;
+                if (page == page1)
+                {
+                    return new Tuple<bool, string>(false, "Can't open table BKPF");
+                }
+                else
+                {
+                    return new Tuple<bool, string>(true, "");
+                }
+            });
+            step.IsComplete = true;
+        }
+
+        private void verfifyTode(string TCode, Func<Tuple<bool, string>> otherVerification = null)
+        {
+            SAPTestHelper.Current.SAPGuiSession.StartTransaction(TCode);
+            if (SAPTestHelper.Current.SAPGuiSession.Info.Transaction != TCode)
+                throw new Exception($"Can't access to TCode:{TCode}");
+
+            if (otherVerification != null)
+            {
+                var result = otherVerification();
+                if (!result.Item1)
+                    throw new Exception(result.Item2);
+            }
+
+        }
+
         private DataTable formatGlAccountData()
         {
-            
-            var accountDatas = Young.Data.Utils.ReadStringToTable(Path.Combine(_workDir,_glAccountFileName), (s,s1) =>
-            {
-                string splitchar = "|";
-                if (!s.Contains(splitchar))
-                    return null;
-                var vals = s.Split(splitchar.ToCharArray().First());
-                var returnVals = new List<string>();
-                for (int i = 0; i < vals.Count(); i++)
-                {
-                    returnVals.Add(vals[i].Trim());
-                }
-                return returnVals;
-            });
+
+            var accountDatas = Young.Data.Utils.ReadStringToTable(Path.Combine(_workDir, _glAccountFileName), (s, s1) =>
+             {
+                 string splitchar = "|";
+                 if (!s.Contains(splitchar))
+                     return null;
+                 var vals = s.Split(splitchar.ToCharArray().First());
+                 var returnVals = new List<string>();
+                 for (int i = 0; i < vals.Count(); i++)
+                 {
+                     returnVals.Add(vals[i].Trim());
+                 }
+                 return returnVals;
+             });
             return accountDatas;
         }
 
@@ -158,6 +203,7 @@ namespace TestScript.Case1
 
             var step = _steps.Where(s => s.Id == 5).First();
             initialStep(step);
+            step.IsProcessKnown = true;
             List<Case1ReportDataModel> report = new List<Case1ReportDataModel>();
 
             //Dictionary<string, int> dic = new Dictionary<string, int>();
@@ -215,7 +261,7 @@ namespace TestScript.Case1
                 foreach (DataRow dr in dt.Rows)
                 {
                     Case1ReportDataModel rp = new Case1ReportDataModel();
-                    rp.DocumentNumber =SAPAutomation.Utils.FillNumber(dr[1].ToString());
+                    rp.DocumentNumber = SAPAutomation.Utils.FillNumber(dr[1].ToString());
                     rp.DocType = dr[2].ToString();
                     rp.DocumentDate = dr[3].ToString();
                     rp.AmtInlocalCur = SAPAutomation.Utils.GetAmount(dr[4].ToString());
@@ -261,23 +307,24 @@ namespace TestScript.Case1
 
         }
 
-        private Dictionary<string,float> getCurrency()
+        private Dictionary<string, float> getCurrency(Case1DataModel data)
         {
             var step = _steps.Where(s => s.Id == 6).First();
             initialStep(step);
-
+            step.IsProcessKnown = true;
             var curList = new List<string>();
-            curList.AddRange(_reportData.Where(c=>c.DocCurrency.ToLower()!="usd").GroupBy(g => g.DocCurrency).Select(s => s.Key));
+            curList.AddRange(_reportData.Where(c => c.DocCurrency.ToLower() != "usd").GroupBy(g => g.DocCurrency).Select(s => s.Key));
             curList.AddRange(_reportData.Where(c => c.LocalCur.ToLower() != "usd").GroupBy(g => g.LocalCur).Select(s => s.Key));
             curList = curList.GroupBy(s => s).Select(s => s.Key).ToList();
             Dictionary<string, float> rateDic = new Dictionary<string, float>();
             curList.ForEach(s => rateDic.Add(s, 0));
 
             DateTime date = DateTime.Now;
-            var firstDayOfMonth = new DateTime(date.Year, date.Month, 1);
-            string d = firstDayOfMonth.ToString("dd.MM.yyyy");
 
-            if(rateDic.Count>0)
+            //var firstDayOfMonth = new DateTime(date.Year, date.Month, 1);
+            //string d = firstDayOfMonth.ToString("dd.MM.yyyy");
+
+            if (rateDic.Count > 0)
             {
                 SAPTestHelper.Current.SAPGuiSession.StartTransaction("OB08");
                 SAPTestHelper.Current.MainWindow.SendKey(SAPKeys.Ctrl_F4);
@@ -285,21 +332,21 @@ namespace TestScript.Case1
 
             step.TotalProcess = rateDic.Count;
 
-            for (int i =0;i<rateDic.Count;i++)
+            for (int i = 0; i < rateDic.Count; i++)
             {
                 var cur = rateDic.ElementAt(i).Key;
                 SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("VIM_POSI_PUSH").Press();
                 SAPTestHelper.Current.PopupWindow.FindById<GuiCTextField>("usr/sub:SAPLSPO4:0300/ctxtSVALD-VALUE[0,21]").Text = "M";
                 SAPTestHelper.Current.PopupWindow.FindById<GuiCTextField>("usr/sub:SAPLSPO4:0300/ctxtSVALD-VALUE[1,21]").Text = cur;
                 SAPTestHelper.Current.PopupWindow.FindById<GuiCTextField>("usr/sub:SAPLSPO4:0300/ctxtSVALD-VALUE[2,21]").Text = "USD";
-                SAPTestHelper.Current.PopupWindow.FindById<GuiCTextField>("usr/sub:SAPLSPO4:0300/ctxtSVALD-VALUE[3,21]").Text = d;
+                SAPTestHelper.Current.PopupWindow.FindById<GuiCTextField>("usr/sub:SAPLSPO4:0300/ctxtSVALD-VALUE[3,21]").Text = data.PostingDateFrom;
                 SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
 
                 var table = SAPTestHelper.Current.MainWindow.FindByName<GuiTableControl>("SAPL0SAPTCTRL_V_TCURR");
 
                 if (table.RowCount > 0)
                 {
-                    if (table.GetCell(0,5).Text.ToLower()== cur.ToLower())
+                    if (table.GetCell(0, 5).Text.ToLower() == cur.ToLower())
                     {
                         rateDic[cur] = SAPAutomation.Utils.GetAmount(table.GetCell(0, 2).Text) / SAPAutomation.Utils.GetAmount(table.GetCell(0, 9).Text);
                     }
@@ -310,7 +357,7 @@ namespace TestScript.Case1
             }
             step.IsComplete = true;
             return rateDic;
-           
+
         }
 
         //private void changeLayout(Dictionary<string,int> columns)
@@ -348,8 +395,8 @@ namespace TestScript.Case1
         {
             var step = _steps.Where(s => s.Id == 7).First();
             initialStep(step);
-
-            if (_reportData.Count>0)
+            step.IsProcessKnown = true;
+            if (_reportData.Count > 0)
             {
                 SAPTestHelper.Current.SAPGuiSession.StartTransaction("SE16");
                 SAPTestHelper.Current.MainWindow.FindByName<GuiCTextField>("DATABROWSE-TABLENAME").Text = "BKPF";
@@ -359,7 +406,7 @@ namespace TestScript.Case1
                 var table = SAPTestHelper.Current.PopupWindow.FindByName<GuiTableControl>("SAPLALDBSINGLE");
                 var docList = _reportData.Select(r => new List<Tuple<int, string>>() { new Tuple<int, string>(1, r.DocumentNumber) }).ToList();
                 step.TotalProcess = docList.Count;
-                table.SetBatchValues(docList,i=> { step.CurrentProcess++; });
+                table.SetBatchValues(docList, i => { step.CurrentProcess++; });
                 SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[8]").Press();
 
                 var datetimeArray = data.PostingDateFrom.Split('.');
@@ -381,7 +428,7 @@ namespace TestScript.Case1
 
                 var grid = SAPTestHelper.Current.MainWindow.FindById<GuiGridView>("usr/cntlGRID1/shellcont/shell");
 
-                if(grid.RowCount>0)
+                if (grid.RowCount > 0)
                 {
                     ///change layout
                     Dictionary<string, int> columns = new Dictionary<string, int>();
@@ -408,11 +455,11 @@ namespace TestScript.Case1
             step.IsComplete = true;
         }
 
-        private void generateReport(Dictionary<string,float> curDic)
+        private void generateReport(Dictionary<string, float> curDic)
         {
             var step = _steps.Where(s => s.Id == 8).First();
             initialStep(step);
-
+            step.IsProcessKnown = true;
             var dt = Young.Data.Utils.ReadStringToTable(Path.Combine(_workDir, _docInfoFileName), (s, h) =>
             {
                 string splitChar = "|";
@@ -467,7 +514,7 @@ namespace TestScript.Case1
                 if (curDic.ContainsKey(r.LocalCur))
                     r.OB08ExLC_GC = curDic[r.LocalCur];
 
-                if(docDic.ContainsKey(r.DocumentNumber))
+                if (docDic.ContainsKey(r.DocumentNumber))
                 {
                     r.LogicalSystem = docDic[r.DocumentNumber].LogicalSystem;
                     r.TranslationDate = docDic[r.DocumentNumber].TransDate;
@@ -489,7 +536,8 @@ namespace TestScript.Case1
 
             string sheetName = "MTD Analysis";
 
-            _reportData.ExportToExcel(Path.Combine(_workDir,"result.xlsx"), sheetName,(s)=> {
+            _reportData.ExportToExcel(Path.Combine(_workDir, "result.xlsx"), sheetName, (s) =>
+            {
 
                 var sheet = s as Ex.Worksheet;
 
@@ -545,7 +593,9 @@ namespace TestScript.Case1
             step.IsComplete = true;
         }
 
-        private void getData(Case1DataModel data, DataTable accountData)
+        private int _dataStepLength = 50;
+
+        private void getReportData(Case1DataModel data, DataTable accountData)
         {
             var step = _steps.Where(s => s.Id == 4).First();
             initialStep(step);
@@ -557,76 +607,130 @@ namespace TestScript.Case1
                 AccountModel acct = dr.ToEntity<AccountModel>();
                 accounts.Add(acct);
             }
-
-            step.TotalProcess = accounts.Count;
-            for (int i = 0; i < accounts.Count; i++)
+            step.IsProcessKnown = true;
+            step.TotalProcess = accounts.Count / _dataStepLength + 1;
+            for (int i = 0; i < step.TotalProcess; i++)
             {
-                //List<List<Tuple<int, string>>> testAccounts = accounts.Skip(i*10).Take(10).Select(
-                //    c => new List<Tuple<int, string>>() { new Tuple<int, string>(1, c.Account) }).ToList();
+                List<List<Tuple<int, string>>> testAccounts = accounts.Skip(i * _dataStepLength).Take(_dataStepLength).Select(
+                    c => new List<Tuple<int, string>>() { new Tuple<int, string>(1, c.Account) }).ToList();
 
-                SAPTestHelper h = SAPTestHelper.Current;
-
-                h.SAPGuiSession.StartTransaction("FAGLL03");
-                h.MainWindow.FindByName<GuiCTextField>("SD_SAKNR-LOW").Text = accounts[i].Account;
-                h.MainWindow.FindByName<GuiCTextField>("SD_BUKRS-LOW").Text = data.CompanyCode;
-
-                //Set Multiple Accounts
-                //h.MainWindow.FindByName<GuiButton>("%_SD_SAKNR_%_APP_%-VALU_PUSH").Press();
-                //var table = h.PopupWindow.FindByName<GuiTableControl>("SAPLALDBSINGLE");
-                //table.SetBatchValues(testAccounts);
-                //h.PopupWindow.FindByName<GuiButton>("btn[8]").Press();
-
-                h.MainWindow.FindByName<GuiRadioButton>("X_AISEL").Select();
-                h.MainWindow.FindByName<GuiCTextField>("SO_BUDAT-LOW").Text = data.PostingDateFrom;
-                h.MainWindow.FindByName<GuiCTextField>("SO_BUDAT-HIGH").Text = data.PostingDateTo;
-                h.MainWindow.FindByName<GuiCTextField>("PA_VARI").Text = data.Layout;
-
-                DateTime start = DateTime.Now;
-                //click execute button
-                h.MainWindow.FindByName<GuiButton>("btn[8]").Press();
-
-                accounts[i].DataCount = SAPTestHelper.Current.MainWindow.FindById<GuiGridView>("usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").RowCount;
-
-                if (accounts[i].DataCount>0)
-                {
-                    //change layout
-                    UIHelper.ChangeLayout(_dataOutputLayout);
-                    
-
-                    DateTime end = DateTime.Now;
-
-                    accounts[i].Period = end.Subtract(start);
-
-                    string file = $"{accounts[i].Account}.txt";
-
-                    accounts[i].DataCount = SAPTestHelper.Current.MainWindow.FindById<GuiGridView>("usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").RowCount;
-
-                    UIHelper.ExportFile("mbar/menu[0]/menu[3]/menu[2]", _reportSourceDataDir, file);
-                }
-
-                
-
-                string processFile = $"{_workDir}\\result.txt";
-
-                using (StreamWriter sw = new StreamWriter(processFile, true))
-                {
-                    string line = $"{accounts[i].Account},{accounts[i].DataCount},{accounts[i].Period.Seconds}";
-                    sw.WriteLine(line);
-                }
-
+                getData(testAccounts, data);
                 step.CurrentProcess++;
+                //SAPTestHelper h = SAPTestHelper.Current;
+
+                //h.SAPGuiSession.StartTransaction("FAGLL03");
+                //h.MainWindow.FindByName<GuiCTextField>("SD_SAKNR-LOW").Text = accounts[i].Account;
+                //h.MainWindow.FindByName<GuiCTextField>("SD_BUKRS-LOW").Text = data.CompanyCode;
+
+                //h.MainWindow.FindByName<GuiRadioButton>("X_AISEL").Select();
+                //h.MainWindow.FindByName<GuiCTextField>("SO_BUDAT-LOW").Text = data.PostingDateFrom;
+                //h.MainWindow.FindByName<GuiCTextField>("SO_BUDAT-HIGH").Text = data.PostingDateTo;
+                //h.MainWindow.FindByName<GuiCTextField>("PA_VARI").Text = data.Layout;
+
+                //DateTime start = DateTime.Now;
+                ////click execute button
+                //h.MainWindow.FindByName<GuiButton>("btn[8]").Press();
+
+                //accounts[i].DataCount = SAPTestHelper.Current.MainWindow.FindById<GuiGridView>("usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").RowCount;
+
+                //if (accounts[i].DataCount>0)
+                //{
+                //    //change layout
+                //    UIHelper.ChangeLayout(_dataOutputLayout);
+
+
+                //    DateTime end = DateTime.Now;
+
+                //    accounts[i].Period = end.Subtract(start);
+
+                //    string file = $"{accounts[i].Account}.txt";
+
+                //    UIHelper.ExportFile("mbar/menu[0]/menu[3]/menu[2]", _reportSourceDataDir, file);
+                //}
+
+
+
+                //string processFile = $"{_workDir}\\result.txt";
+
+                //using (StreamWriter sw = new StreamWriter(processFile, true))
+                //{
+                //    string line = $"{accounts[i].Account},{accounts[i].DataCount},{accounts[i].Period.Seconds}";
+                //    sw.WriteLine(line);
+                //}
+
+                //step.CurrentProcess++;
 
             }
+
+
 
             step.IsComplete = true;
 
         }
 
+        private void getData(List<List<Tuple<int, string>>> testAccounts, Case1DataModel data)
+        {
+            SAPTestHelper h = SAPTestHelper.Current;
+
+            h.SAPGuiSession.StartTransaction("FAGLL03");
+            //h.MainWindow.FindByName<GuiCTextField>("SD_SAKNR-LOW").Text = accounts[i].Account;
+            h.MainWindow.FindByName<GuiCTextField>("SD_BUKRS-LOW").Text = data.CompanyCode;
+
+            //Set Multiple Accounts
+            h.MainWindow.FindByName<GuiButton>("%_SD_SAKNR_%_APP_%-VALU_PUSH").Press();
+            var table = h.PopupWindow.FindByName<GuiTableControl>("SAPLALDBSINGLE");
+            table.SetBatchValues(testAccounts);
+            h.PopupWindow.FindByName<GuiButton>("btn[8]").Press();
+
+            h.MainWindow.FindByName<GuiRadioButton>("X_AISEL").Select();
+            h.MainWindow.FindByName<GuiCTextField>("SO_BUDAT-LOW").Text = data.PostingDateFrom;
+            h.MainWindow.FindByName<GuiCTextField>("SO_BUDAT-HIGH").Text = data.PostingDateTo;
+            h.MainWindow.FindByName<GuiCTextField>("PA_VARI").Text = data.Layout;
+
+
+            //click execute button
+            h.MainWindow.FindByName<GuiButton>("btn[8]").Press();
+
+            var rowNumber = SAPTestHelper.Current.MainWindow.FindById<GuiGridView>("usr/cntlGRID1/shellcont/shell/shellcont[1]/shell").RowCount;
+
+            if (rowNumber > 0)
+            {
+                //change layout
+                UIHelper.ChangeLayout(_dataOutputLayout);
+
+
+                DateTime end = DateTime.Now;
+
+
+
+                string file = $"{testAccounts.First().First().Item2}.txt";
+
+
+
+                UIHelper.ExportFile("mbar/menu[0]/menu[3]/menu[2]", _reportSourceDataDir, file);
+            }
+
+
+
+            string processFile = $"{_workDir}\\result.txt";
+
+            using (StreamWriter sw = new StreamWriter(processFile, true))
+            {
+
+                foreach (var account in testAccounts)
+                {
+                    string line = $"{testAccounts.First().First().Item2},{account.First().Item2},{rowNumber},{data.PostingDateFrom},{data.PostingDateTo}";
+                    sw.WriteLine(line);
+                }
+
+            }
+        }
+
         private void getGLAccount(Case1DataModel data)
-        {           
+        {
             var step = _steps.Where(s => s.Id == 3).First();
             initialStep(step);
-
+            step.IsProcessKnown = true;
             List<List<Tuple<int, string>>> accounts = new List<List<Tuple<int, string>>>();
             using (StreamReader sr = new StreamReader(_accountPath))
             {
@@ -648,7 +752,7 @@ namespace TestScript.Case1
             SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("%_I2_%_APP_%-VALU_PUSH").Press();
 
             var table = SAPTestHelper.Current.PopupWindow.FindByName<GuiTableControl>("SAPLALDBSINGLE");
-            table.SetBatchValues(accounts,(i)=> { step.CurrentProcess++; });
+            table.SetBatchValues(accounts, (i) => { step.CurrentProcess++; });
 
             SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[8]").Press();
             SAPTestHelper.Current.MainWindow.FindByName<GuiTextField>("MAX_SEL").Text = "10000";
@@ -656,7 +760,7 @@ namespace TestScript.Case1
 
 
             UIHelper.ExportFile("mbar/menu[0]/menu[10]/menu[3]/menu[2]", _workDir, _glAccountFileName);
-           
+
             step.IsComplete = true;
         }
 
