@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CaseRunner", "CaseRunner\Ca
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CaseRunnerModel", "CaseRunnerModel\CaseRunnerModel.csproj", "{FD156A54-42B2-4BE1-819C-80660E9F4507}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GL_MEC_006", "GL_MEC_006\GL_MEC_006.csproj", "{54B47B16-2F00-4E54-9CE8-E5FDD86FECE8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SAPShareDataLib", "SAPShareDataLib\SAPShareDataLib.csproj", "{0794D1B3-8A70-4B78-9157-1B2FF1F71DE1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +37,14 @@ Global
 		{FD156A54-42B2-4BE1-819C-80660E9F4507}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FD156A54-42B2-4BE1-819C-80660E9F4507}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FD156A54-42B2-4BE1-819C-80660E9F4507}.Release|Any CPU.Build.0 = Release|Any CPU
+		{54B47B16-2F00-4E54-9CE8-E5FDD86FECE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54B47B16-2F00-4E54-9CE8-E5FDD86FECE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54B47B16-2F00-4E54-9CE8-E5FDD86FECE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54B47B16-2F00-4E54-9CE8-E5FDD86FECE8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0794D1B3-8A70-4B78-9157-1B2FF1F71DE1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0794D1B3-8A70-4B78-9157-1B2FF1F71DE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0794D1B3-8A70-4B78-9157-1B2FF1F71DE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0794D1B3-8A70-4B78-9157-1B2FF1F71DE1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

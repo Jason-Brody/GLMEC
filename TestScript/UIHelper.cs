@@ -14,55 +14,6 @@ namespace TestScript
 {
     class UIHelper
     {
-        //public static void SetAccess(string windowName,CancellationToken token)
-        //{
-            
-
-        //    bool isPress = false;
-        //    while(!isPress)
-        //    {
-        //        if (token.IsCancellationRequested)
-        //            break;
-
-        //        var e = TreeWalker.ControlViewWalker.GetFirstChild(AutomationElement.RootElement);
-
-        //        while (e != null)
-        //        {
-        //            if (e.Current.Name == windowName)
-        //                break;
-        //            var tempE = TreeWalker.ControlViewWalker.GetNextSibling(e);
-        //            e = tempE;
-        //        }
-
-        //        if (e != null)
-        //        {
-        //            var condition1 = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.CheckBox);
-        //            var checkboxElement = e.FindFirst(TreeScope.Descendants, condition1);
-        //            if (checkboxElement != null)
-        //            {
-        //                var checkbox = checkboxElement.GetCurrentPattern(TogglePattern.Pattern) as TogglePattern;
-        //                if (checkbox.Current.ToggleState == ToggleState.Off)
-        //                {
-        //                    checkbox.Toggle();
-        //                }
-        //            }
-
-        //            condition1 = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Button);
-        //            var condition2 = new PropertyCondition(AutomationElement.AccessKeyProperty, "Alt+A");
-        //            var andCondition = new AndCondition(condition1, condition2);
-        //            var btnElement = e.FindFirst(TreeScope.Descendants, andCondition);
-        //            if (btnElement != null)
-        //            {
-        //                var btn = btnElement.GetCurrentPattern(InvokePattern.Pattern) as InvokePattern;
-                        
-        //                btn.Invoke();
-        //                isPress = true;
-        //            }
-        //        }
-        //    }
-            
-        //}
-
         public static void ChangeLayout(Dictionary<string, int> columns)
         {
             SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("btn[32]").Press();
@@ -114,22 +65,64 @@ namespace TestScript
             var windowName = SAPTestHelper.Current.MainWindow.Text;
             var args = "\"" + windowName + "\"";
 
-
-            //ProcessStartInfo psi = new ProcessStartInfo();
-            //psi.FileName = "SAPGuiHelper.exe";
-            //psi.Arguments = args;
-            //var p = Process.Start(psi);
-
-
             var ts = new CancellationTokenSource();
             var ct = ts.Token;
 
-            Task.Run(() => { SAPAutomation.Utils.SetAccess(windowName, ct); });
+            Task.Run(() => { Utils.SetAccess(windowName, ct); });
             SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
             ts.Cancel();
-            //p = Process.GetProcessById(p.Id);
-            //if (p != null)
-            //    p.Kill();
+            
+        }
+
+        public static void SAPAccessVerification(string TCode, Func<Tuple<bool, string>> otherVerification = null)
+        {
+            SAPTestHelper.Current.SAPGuiSession.StartTransaction(TCode);
+            if (SAPTestHelper.Current.SAPGuiSession.Info.Transaction != TCode)
+                throw new Exception($"Can't access to TCode:{TCode}");
+
+            if (otherVerification != null)
+            {
+                var result = otherVerification();
+                if (!result.Item1)
+                    throw new Exception(result.Item2);
+            }
+        }
+
+        public static void SE16TableAccessVerification(string tableName)
+        {
+            SAPAccessVerification("SE16", () =>
+            {
+                var page = SAPTestHelper.Current.SAPGuiSession.Info.ScreenNumber;
+                SAPTestHelper.Current.MainWindow.FindByName<GuiCTextField>("DATABROWSE-TABLENAME").Text = tableName;
+                SAPTestHelper.Current.MainWindow.SendKey(SAPKeys.Enter);
+                var page1 = SAPTestHelper.Current.SAPGuiSession.Info.ScreenNumber;
+                if (page == page1)
+                {
+                    return new Tuple<bool, string>(false, $"Don't have access to TCODE:SE16 ,table:{tableName}");
+                }
+                else
+                {
+                    return new Tuple<bool, string>(true, "");
+                }
+            });
+        }
+
+        public static void Login(LoginDataModel data)
+        {
+            SAPLogon l = new SAPLogon();
+            l.StartProcess();
+            l.OpenConnection(data.Address);
+            l.Login(data.UserName, data.Password, data.Client, data.Language);
+            SAPTestHelper.Current.SetSession(l);
+
+            SAPTestHelper.Current.OnRequestError += (s, e) => { throw new Exception(e.Message); };
+        }
+
+        public static void GoToSE16Table(string tableName)
+        {
+            SAPTestHelper.Current.SAPGuiSession.StartTransaction("SE16");
+            SAPTestHelper.Current.MainWindow.FindByName<GuiCTextField>("DATABROWSE-TABLENAME").Text = tableName;
+            SAPTestHelper.Current.MainWindow.SendKey(SAPKeys.Enter);
         }
     }
 }

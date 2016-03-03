@@ -13,6 +13,8 @@ using CaseRunnerModel;
 using Ex = Microsoft.Office.Interop.Excel;
 using Young.Data.Extension;
 using Young.Excel.Interop.Extensions;
+using Young.Data.Attributes;
+using System.Reflection;
 
 namespace TestScript.Case1
 {
@@ -35,6 +37,7 @@ namespace TestScript.Case1
             _steps.Add(new StepInfo() { Id = 1, Name = "Read Config Data", IsProcessKnown = false });
             _steps.Add(new StepInfo() { Id = 2, Name = "Login to LH", IsProcessKnown = false });
             _steps.Add(new StepInfo() { Id = 0, Name = "TCode acceess verification", IsProcessKnown = false });
+            _steps.Add(new StepInfo() { Id = -1, Name = "Check User Configuration", IsProcessKnown = false });
             _steps.Add(new StepInfo() { Id = 3, Name = "Get GL Accounts", IsProcessKnown = true });
             _steps.Add(new StepInfo() { Id = 4, Name = "Get Report Data", IsProcessKnown = true });
             _steps.Add(new StepInfo() { Id = 5, Name = "Merge Report Data", IsProcessKnown = true });
@@ -118,9 +121,13 @@ namespace TestScript.Case1
             foreach (DataRow dr in _dt.Rows)
             {
                 var data = dr.ToEntity<Case1DataModel>();
+                Tools.MasterDataVerification(data);
+                
                 setCondig(data);
                 login(data);
+                SAPTestHelper.Current.TurnScreenLog(ScreenLogLevel.All);
                 tcodeAccessVerification();
+                checkUserConfig();
                 getGLAccount(data);
 
                 getReportData(data, formatGlAccountData());
@@ -139,44 +146,49 @@ namespace TestScript.Case1
             }
         }
 
+        private void checkUserConfig()
+        {
+            var step = _steps.Where(s => s.Id == -1).First();
+            initialStep(step);
+            SAPTestHelper.Current.SAPGuiSession.StartTransaction("su3");
+            SAPTestHelper.Current.MainWindow.FindByName<GuiTab>("DEFA").Select();
+
+            var decimalNotation = SAPTestHelper.Current.MainWindow.FindByName<GuiComboBox>("SUID_ST_NODE_DEFAULTS-DCPFM");
+
+            bool isChange = false;
+
+            if (decimalNotation.Value != "1,234,567.89")
+            {
+                decimalNotation.Value = "1,234,567.89";
+                isChange = true;
+            }
+
+            var dateFormat = SAPTestHelper.Current.MainWindow.FindByName<GuiComboBox>("SUID_ST_NODE_DEFAULTS-DATFM");
+            if(dateFormat.Value != "DD.MM.YYYY")
+            {
+                dateFormat.Value = "DD.MM.YYYY";
+                isChange = true;
+            }
+
+            if (isChange)
+                SAPTestHelper.Current.MainWindow.SendKey(SAPKeys.Ctrl_S);
+            else
+                SAPTestHelper.Current.MainWindow.SendKey(SAPKeys.F3);
+            step.IsComplete = true;
+
+        }
+
         private void tcodeAccessVerification()
         {
             var step = _steps.Where(s => s.Id == 0).First();
+            
             initialStep(step);
-            verfifyTode("OB08");
 
-            verfifyTode("FAGLL03");
-            verfifyTode("SE16", () =>
-            {
-                var page = SAPTestHelper.Current.SAPGuiSession.Info.ScreenNumber;
-                SAPTestHelper.Current.MainWindow.FindByName<GuiCTextField>("DATABROWSE-TABLENAME").Text = "BKPF";
-                SAPTestHelper.Current.MainWindow.SendKey(SAPKeys.Enter);
-                var page1 = SAPTestHelper.Current.SAPGuiSession.Info.ScreenNumber;
-                if (page == page1)
-                {
-                    return new Tuple<bool, string>(false, "Can't open table BKPF");
-                }
-                else
-                {
-                    return new Tuple<bool, string>(true, "");
-                }
-            });
+            UIHelper.SAPAccessVerification("OB08");
+            UIHelper.SAPAccessVerification("FAGLL03");
+            UIHelper.SE16TableAccessVerification("BKPF");
+            
             step.IsComplete = true;
-        }
-
-        private void verfifyTode(string TCode, Func<Tuple<bool, string>> otherVerification = null)
-        {
-            SAPTestHelper.Current.SAPGuiSession.StartTransaction(TCode);
-            if (SAPTestHelper.Current.SAPGuiSession.Info.Transaction != TCode)
-                throw new Exception($"Can't access to TCode:{TCode}");
-
-            if (otherVerification != null)
-            {
-                var result = otherVerification();
-                if (!result.Item1)
-                    throw new Exception(result.Item2);
-            }
-
         }
 
         private DataTable formatGlAccountData()
@@ -360,36 +372,7 @@ namespace TestScript.Case1
 
         }
 
-        //private void changeLayout(Dictionary<string,int> columns)
-        //{
-        //    SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("btn[32]").Press();
-        //    var displayedColumnsGrid = SAPTestHelper.Current.PopupWindow.FindById<GuiGridView>("usr/tabsG_TS_ALV/tabpALV_M_R1/ssubSUB_DYN0510:SAPLSKBH:0620/cntlCONTAINER2_LAYO/shellcont/shell");
-        //    if (displayedColumnsGrid.RowCount > 0)
-        //    {
-        //        displayedColumnsGrid.SelectAll();
-        //        SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("APP_FL_SING").Press();
-        //    }
-        //    var columnSetGrid = SAPTestHelper.Current.PopupWindow.FindById<GuiGridView>("usr/tabsG_TS_ALV/tabpALV_M_R1/ssubSUB_DYN0510:SAPLSKBH:0620/cntlCONTAINER1_LAYO/shellcont/shell");
-
-        //    string selectedRow = "";
-
-        //    for (int c = 0; c < columnSetGrid.RowCount; c++)
-        //    {
-        //        var col = columnSetGrid.GetCellValue(c, "SELTEXT");
-
-        //        if (columns.ContainsKey(col))
-        //        {
-        //            selectedRow += c.ToString() + ",";
-        //            columns[col] = c;
-        //        }
-
-        //    }
-
-        //    columnSetGrid.SelectedRows = selectedRow;
-        //    SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("APP_WL_SING").Press();
-
-        //    SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
-        //}
+      
 
         private void getDocInfo(Case1DataModel data)
         {
@@ -419,7 +402,7 @@ namespace TestScript.Case1
                 if (startFiscalYear != endFiscalYear)
                     SAPTestHelper.Current.MainWindow.FindByName<GuiTextField>("I3-HIGH").Text = endFiscalYear.ToString();
 
-
+                
                 SAPTestHelper.Current.MainWindow.FindByName<GuiCTextField>("I6-LOW").Text = data.PostingDateFrom;
                 SAPTestHelper.Current.MainWindow.FindByName<GuiCTextField>("I6-HIGH").Text = data.PostingDateTo;
                 SAPTestHelper.Current.MainWindow.FindByName<GuiTextField>("MAX_SEL").Text = "10000";
@@ -585,13 +568,39 @@ namespace TestScript.Case1
         {
             var step = _steps.Where(s => s.Id == 2).First();
             initialStep(step);
-            SAPLogon l = new SAPLogon();
-            l.StartProcess();
-            l.OpenConnection(data.Address);
-            l.Login(data.UserName, data.Password, data.Client, data.Language);
-            SAPTestHelper.Current.SetSession(l);
+
+            UIHelper.Login(data);
+            
             step.IsComplete = true;
+
         }
+
+        //private void masterDataVerification(Case1DataModel data)
+        //{
+        //    var props = typeof(Case1DataModel).GetProperties();
+        //    foreach(var prop in props)
+        //    {
+        //        var attr = prop.GetCustomAttribute<NullExceptionAttribute>(true);
+        //        if (attr != null)
+        //        {
+        //            object value = prop.GetValue(data);
+        //            if (value == null)
+        //            {
+        //                throw new ArgumentNullException(attr.Name); 
+        //            }
+        //            else
+        //            {
+        //                if(string.IsNullOrEmpty(value.ToString()))
+        //                {
+        //                    throw new ArgumentNullException(attr.Name);
+        //                }
+        //            }
+                        
+        //        }
+        //    }
+        //}
+
+       
 
         private int _dataStepLength = 50;
 

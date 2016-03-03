@@ -16,6 +16,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using TestScript.Case1;
 using System.Timers;
+using System.Diagnostics;
 
 namespace CaseRunner
 {
@@ -77,6 +78,8 @@ namespace CaseRunner
             }
             catch(Exception ex)
             {
+                t.Stop();
+                pb.IsIndeterminate = false;
                 MessageBox.Show(ex.Message);
             }
             finally
@@ -96,6 +99,34 @@ namespace CaseRunner
         private void cb_Cases_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             _currentCase = ((sender as ComboBox).SelectedItem as IRunner);
+        }
+
+        private string workDir = AppDomain.CurrentDomain.BaseDirectory;
+
+        private void btn_MasterData_Click(object sender, RoutedEventArgs e)
+        {
+            openFolder(workDir);
+        }
+
+        private void btn_GLAccount_Click(object sender, RoutedEventArgs e)
+        {
+            string folder = System.IO.Path.Combine(workDir, "Case1");
+            openFolder(folder);
+        }
+
+        private void btn_Report_Click(object sender, RoutedEventArgs e)
+        {
+            string folder = System.IO.Path.Combine(workDir, "ReportData");
+            openFolder(folder);
+        }
+
+        private void openFolder(string folder)
+        {
+            if (!Directory.Exists(folder))
+            {
+                Directory.CreateDirectory(folder);
+            }
+            Process.Start(folder);
         }
     }
 }

@@ -4,14 +4,13 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{FD156A54-42B2-4BE1-819C-80660E9F4507}</ProjectGuid>
+    <ProjectGuid>{54B47B16-2F00-4E54-9CE8-E5FDD86FECE8}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CaseRunnerModel</RootNamespace>
-    <AssemblyName>CaseRunnerModel</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <RootNamespace>GL_MEC_006</RootNamespace>
+    <AssemblyName>GL_MEC_006</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -32,6 +31,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -41,16 +41,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Attributes\ScriptInfoAttribute.cs" />
-    <Compile Include="Attributes\StepInfoAttribute.cs" />
-    <Compile Include="CaseInfo.cs" />
-    <Compile Include="IRunner.cs" />
-    <Compile Include="IScriptInitial.cs" />
-    <Compile Include="StepInfo.cs" />
+    <Compile Include="Class1.cs" />
+    <Compile Include="DataModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Stript.cs" />
-    <Compile Include="TestInterface.cs" />
-    <Compile Include="WPFNotify.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CaseRunnerModel\CaseRunnerModel.csproj">
+      <Project>{fd156a54-42b2-4be1-819c-80660e9f4507}</Project>
+      <Name>CaseRunnerModel</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SAPShareDataLib\SAPShareDataLib.csproj">
+      <Project>{0794d1b3-8a70-4b78-9157-1b2ff1f71de1}</Project>
+      <Name>SAPShareDataLib</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -90,9 +90,10 @@ namespace CaseTrigger
 
         static void Main(string[] args)
         {
-            
-            
 
+            SAPTestHelper.Current.SetSession();
+
+           
 
             CancellationTokenSource cts = new CancellationTokenSource();
             var token = cts.Token;

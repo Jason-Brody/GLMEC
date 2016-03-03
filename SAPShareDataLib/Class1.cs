@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
 
-namespace TestScript
+namespace SAPShareDataLib
 {
     public class LoginDataModel
     {
@@ -26,7 +26,7 @@ namespace TestScript
         public string Language { get; set; }
 
         [Required]
-        [Display(Name = "SAP Server Client")]
+        [Display(Name ="SAP Server Client")]
         public string Client { get; set; }
     }
 }
