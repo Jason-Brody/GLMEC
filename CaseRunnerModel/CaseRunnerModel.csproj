@@ -42,13 +42,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Attributes\ScriptInfoAttribute.cs" />
-    <Compile Include="Attributes\StepInfoAttribute.cs" />
+    <Compile Include="Attributes\StepAttribute.cs" />
     <Compile Include="CaseInfo.cs" />
     <Compile Include="IRunner.cs" />
     <Compile Include="IScriptInitial.cs" />
     <Compile Include="StepInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Stript.cs" />
+    <Compile Include="ScriptRunner.cs" />
     <Compile Include="TestInterface.cs" />
     <Compile Include="WPFNotify.cs" />
   </ItemGroup>

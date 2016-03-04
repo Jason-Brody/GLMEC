@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Reflection;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Data;
 
 namespace TestScript
 {
@@ -47,6 +48,27 @@ namespace TestScript
 
             }
             return datas;
+        }
+
+        public static DataTable ReadToTable(string path)
+        {
+            DataTable dt = Young.Data.Utils.ReadStringToTable(path, (s, h) =>
+            {
+                string splitChar = "|";
+                if (!s.Contains(splitChar) || s == h || s.Contains("*"))
+                    return null;
+
+                var vals = s.Split(splitChar.ToCharArray().First());
+                var returnVals = new List<string>();
+                for (int i = 0; i < vals.Count(); i++)
+                {
+                    returnVals.Add(vals[i].Trim());
+                }
+                return returnVals;
+
+            });
+
+            return dt;
         }
     }
 }

@@ -1,23 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Automation;
-using TestScript.Case1;
-using TestScript;
-using System.Data;
-using System.IO;
-using Young.Data;
+﻿using CaseRunnerModel;
 using SAPAutomation;
 using SAPFEWSELib;
-using Ex = Microsoft.Office.Interop.Excel;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Automation;
+using TestScript;
+using TestScript.Case1;
+using TestScript.Case6;
+using Young.Data;
 using Young.Data.Extension;
 using Young.Excel.Interop.Extensions;
-using System.Threading;
-using System.Diagnostics;
+using Ex = Microsoft.Office.Interop.Excel;
 
 namespace CaseTrigger
 {
@@ -88,8 +90,73 @@ namespace CaseTrigger
             return sr.ReadToEnd();
         }
 
+        class Person
+        {
+            public string FirstName { get; set; }
+            public string LastName { get; set; }
+        }
+
+        class Pet
+        {
+            public string Name { get; set; }
+            public Person Owner { get; set; }
+        }
+
+        public static void LeftOuterJoinExample()
+        {
+            Person magnus = new Person { FirstName = "Magnus", LastName = "Hedlund" };
+            Person terry = new Person { FirstName = "Terry", LastName = "Adams" };
+            Person charlotte = new Person { FirstName = "Charlotte", LastName = "Weiss" };
+            Person arlene = new Person { FirstName = "Arlene", LastName = "Huff" };
+
+            Pet barley = new Pet { Name = "Barley", Owner = terry };
+            Pet boots = new Pet { Name = "Boots", Owner = terry };
+            Pet whiskers = new Pet { Name = "Whiskers", Owner = charlotte };
+            Pet bluemoon = new Pet { Name = "Blue Moon", Owner = terry };
+            Pet daisy = new Pet { Name = "Daisy", Owner = magnus };
+
+            // Create two lists.
+            List<Person> people = new List<Person> { magnus, terry, charlotte, arlene };
+            List<Pet> pets = new List<Pet> { barley, boots, whiskers, bluemoon, daisy };
+
+            var query = from person in people
+                        join pet in pets on person equals pet.Owner into gj
+                        from subpet in gj.DefaultIfEmpty()
+                        select new { person.FirstName, PetName = (subpet == null ? String.Empty : subpet.Name) };
+
+            foreach (var v in query)
+            {
+                Console.WriteLine("{0,-15}{1}", v.FirstName + ":", v.PetName);
+            }
+        }
+
         static void Main(string[] args)
         {
+
+           
+
+            DataTable dt = ExcelHelper.Current.Open("Case1_MTD_Analysis.xlsx").Read("Case6_WorkFlow");
+            foreach (DataRow dr in dt.Rows)
+            {
+                var d = dr.ToEntity<Case6DataModel>();
+                Case6_Workflow script = new Case6_Workflow();
+                var runner = new ScriptRunner<Case6_Workflow>(script);
+
+                runner.Run(d);
+
+            }
+
+
+
+
+
+
+
+
+
+
+
+
 
             SAPTestHelper.Current.SetSession();
 
@@ -156,7 +223,7 @@ namespace CaseTrigger
 
         }
 
-
+        
 
         private static void format(object worksheet)
         {

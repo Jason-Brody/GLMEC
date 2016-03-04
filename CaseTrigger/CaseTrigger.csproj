@@ -53,8 +53,9 @@
     <Reference Include="Microsoft.Office.Interop.Excel, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
-    <Reference Include="SAPAutomation">
-      <HintPath>..\..\Github\SAPGuiAutomationLib\SAPAutomation\bin\Debug\SAPAutomation.dll</HintPath>
+    <Reference Include="SAPAutomation, Version=1.4.0.1, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\SAPGuiAutomationLib\SAPAutomation\bin\Debug\SAPAutomation.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -70,7 +71,7 @@
     <Reference Include="UIAutomationTypes" />
     <Reference Include="Young.Data, Version=1.2.0.1, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Github\Young\Young.Data\bin\Debug\Young.Data.dll</HintPath>
+      <HintPath>..\..\Young\Young.Data\bin\Debug\Young.Data.dll</HintPath>
     </Reference>
     <Reference Include="Young.Excel.Interop">
       <HintPath>..\..\Github\Young\Young.Excel.Interop\bin\Debug\Young.Excel.Interop.dll</HintPath>
@@ -84,6 +85,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\CaseRunnerModel\CaseRunnerModel.csproj">
+      <Project>{fd156a54-42b2-4be1-819c-80660e9f4507}</Project>
+      <Name>CaseRunnerModel</Name>
+    </ProjectReference>
     <ProjectReference Include="..\TestScript\TestScript.csproj">
       <Project>{7d93654b-5978-4922-9cc4-20deef9d954e}</Project>
       <Name>TestScript</Name>

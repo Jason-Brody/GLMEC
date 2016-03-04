@@ -14,6 +14,35 @@ namespace TestScript
 {
     class UIHelper
     {
+        public static void ChangeLayout(HashSet<string> columns)
+        {
+            SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("btn[32]").Press();
+            var displayedColumnsGrid = SAPTestHelper.Current.PopupWindow.FindById<GuiGridView>("usr/tabsG_TS_ALV/tabpALV_M_R1/ssubSUB_DYN0510:SAPLSKBH:0620/cntlCONTAINER2_LAYO/shellcont/shell");
+            if (displayedColumnsGrid.RowCount > 0)
+            {
+                displayedColumnsGrid.SelectAll();
+                SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("APP_FL_SING").Press();
+            }
+            var columnSetGrid = SAPTestHelper.Current.PopupWindow.FindById<GuiGridView>("usr/tabsG_TS_ALV/tabpALV_M_R1/ssubSUB_DYN0510:SAPLSKBH:0620/cntlCONTAINER1_LAYO/shellcont/shell");
+
+            string selectedRow = "";
+
+            for (int c = 0; c < columnSetGrid.RowCount; c++)
+            {
+                var col = columnSetGrid.GetCellValue(c, "SELTEXT");
+
+                if (columns.Contains(col))
+                {
+                    selectedRow += c.ToString() + ",";
+                }
+
+            }
+
+            columnSetGrid.SelectedRows = selectedRow;
+            SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("APP_WL_SING").Press();
+
+            SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
+        }
         public static void ChangeLayout(Dictionary<string, int> columns)
         {
             SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("btn[32]").Press();
@@ -123,6 +152,11 @@ namespace TestScript
             SAPTestHelper.Current.SAPGuiSession.StartTransaction("SE16");
             SAPTestHelper.Current.MainWindow.FindByName<GuiCTextField>("DATABROWSE-TABLENAME").Text = tableName;
             SAPTestHelper.Current.MainWindow.SendKey(SAPKeys.Enter);
+        }
+
+        public static void SetBatchData(List<string> Datas)
+        {
+
         }
     }
 }
