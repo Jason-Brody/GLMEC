@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,10 +10,10 @@ namespace TestScript.Case1
 {
     public class Case1DocInfoModel
     {
-        [Alias("Cocd")]
+        [ColMapping("Cocd")]
         public string CompanyCode { get; set; }
 
-        [Alias("DocumentNo")]
+        [ColMapping("DocumentNo")]
         public string DocumentNumber { get; set; }
 
         public string DocType { get; set; }
@@ -31,7 +32,7 @@ namespace TestScript.Case1
 
         public string LocalCurrency { get; set; }
 
-        [Alias("LCur2")]
+        [ColMapping("LCur2")]
         public string GroupCurrency { get; set; }
 
         public string ExchangeRateType { get; set; }

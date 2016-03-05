@@ -69,12 +69,9 @@
     <Reference Include="UIAutomationClient" />
     <Reference Include="UIAutomationProvider" />
     <Reference Include="UIAutomationTypes" />
-    <Reference Include="Young.Data, Version=1.2.0.1, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Young.Data, Version=1.2.0.2, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\Young\Young.Data\bin\Debug\Young.Data.dll</HintPath>
-    </Reference>
-    <Reference Include="Young.Excel.Interop">
-      <HintPath>..\..\Github\Young\Young.Excel.Interop\bin\Debug\Young.Excel.Interop.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

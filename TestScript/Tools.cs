@@ -7,6 +7,7 @@ using System.Reflection;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Data;
+using Young.Data;
 
 namespace TestScript
 {
@@ -69,6 +70,13 @@ namespace TestScript
             });
 
             return dt;
+        }
+
+        public static List<T> GetDataEntites<T>(string filePath) where T:class,new()
+        {
+            var dt = Tools.ReadToTable(filePath);
+            List<T> datas = dt.ToList<T>();
+            return datas;
         }
     }
 }

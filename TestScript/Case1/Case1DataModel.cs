@@ -14,11 +14,9 @@ namespace TestScript.Case1
         public string GLAccountTo { get; set; }
 
         [Required]
-        [Display(Name = "CompanyCode")]
         public string CompanyCode { get; set; }
 
         [Required]
-        [Display(Name = "PostingDateFrom")]
         public string PostingDateFrom
         {
             get
@@ -32,7 +30,6 @@ namespace TestScript.Case1
         }
 
         [Required]
-        [Display(Name = "PostingDateTo")]
         public string PostingDateTo
         {
             get
@@ -46,7 +43,6 @@ namespace TestScript.Case1
         }
 
         [Required]
-        [Display(Name ="Layout")]
         public string Layout { get; set; }
 
         private DateTime _postingStart;

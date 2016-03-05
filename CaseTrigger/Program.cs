@@ -18,7 +18,6 @@ using TestScript.Case1;
 using TestScript.Case6;
 using Young.Data;
 using Young.Data.Extension;
-using Young.Excel.Interop.Extensions;
 using Ex = Microsoft.Office.Interop.Excel;
 
 namespace CaseTrigger
@@ -136,13 +135,13 @@ namespace CaseTrigger
            
 
             DataTable dt = ExcelHelper.Current.Open("Case1_MTD_Analysis.xlsx").Read("Case6_WorkFlow");
-            foreach (DataRow dr in dt.Rows)
+            var myDatas = dt.ToList<Case6DataModel>();
+            foreach (var d in myDatas)
             {
-                var d = dr.ToEntity<Case6DataModel>();
                 Case6_Workflow script = new Case6_Workflow();
                 var runner = new ScriptRunner<Case6_Workflow>(script);
-
-                runner.Run(d);
+                runner.Run(d, 8);
+               // runner.Run(d);
 
             }
 
@@ -158,29 +157,7 @@ namespace CaseTrigger
 
 
 
-            SAPTestHelper.Current.SetSession();
-
-           
-
-            CancellationTokenSource cts = new CancellationTokenSource();
-            var token = cts.Token;
-            SetAccess("Data Browser",token);
-
-            string secerect = Encode("Zhou Yang");
-            Console.WriteLine(secerect);
-            Console.WriteLine(Decode(secerect));
-
-            Console.WriteLine(SAPAutomation.Utils.FillNumber("200000160"));
-            var _dt = ExcelHelper.Current.Open("Case1_MTD_Analysis.xlsx").Read("Case1_MTD_Analysis");
-            ExcelHelper.Current.Close();
-            var data = _dt.Rows[0].ToEntity<Case1DataModel>();
-            var datas = mergeData(@"E:\GitHub\GLMEC\CaseTrigger\bin\Debug\ReportData\DE50\Datas");
-            datas.ExportToExcel(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "test.xlsx"), "MTD Analysis", (s) => { format(s); });
-            //Console.WriteLine(DateTime.Now);
-            //Console.WindowHeight = 1;
-            //Console.WindowWidth = 1;
-            //Case1_MTD_Analysis case1 = new Case1_MTD_Analysis();
-            //case1.Run();
+         
 
 
         }

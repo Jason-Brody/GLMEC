@@ -41,15 +41,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Attributes\ScriptInfoAttribute.cs" />
+    <Compile Include="Attributes\ScriptAttribute.cs" />
     <Compile Include="Attributes\StepAttribute.cs" />
     <Compile Include="CaseInfo.cs" />
+    <Compile Include="ProcessInfo.cs" />
     <Compile Include="IRunner.cs" />
     <Compile Include="IScriptInitial.cs" />
     <Compile Include="StepInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ScriptRunner.cs" />
-    <Compile Include="TestInterface.cs" />
     <Compile Include="WPFNotify.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

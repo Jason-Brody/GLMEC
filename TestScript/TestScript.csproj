@@ -55,8 +55,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\Young\Young.Data\bin\Debug\Young.Data.dll</HintPath>
     </Reference>
-    <Reference Include="Young.Excel.Interop">
-      <HintPath>..\..\Github\Young\Young.Excel.Interop\bin\Debug\Young.Excel.Interop.dll</HintPath>
+    <Reference Include="Young.Excel.Interop, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Young\Young.Excel.Interop\bin\Debug\Young.Excel.Interop.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -66,6 +67,7 @@
     <Compile Include="Case1\Case1ReportDataModel.cs" />
     <Compile Include="Case1\Case1_MTD_Analysis.cs" />
     <Compile Include="Case6\Case6DataModel.cs" />
+    <Compile Include="Case6\Case6FileConfig.cs" />
     <Compile Include="Case6\Case6ReportModel.cs" />
     <Compile Include="Case6\Case6_Workflow.cs" />
     <Compile Include="Case6\EDIDSDataModel.cs" />

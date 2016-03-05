@@ -5,10 +5,11 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using CaseRunnerModel;
 
 namespace CaseRunnerModel
 {
-    public class ScriptRunner<T> where T : class, IScriptInitial, new()
+    public class ScriptRunner<T> where T : class, IScriptRunner, new()
     {
         private Dictionary<int, Tuple<StepAttribute, MethodInfo>> _stepDic;
 
@@ -28,13 +29,25 @@ namespace CaseRunnerModel
 
             if (_obj == null)
                 _obj = new T();
-            _obj.InitialData(data);
+            _obj.SetInputData(data, new Progress<ProcessInfo>());
 
 
             foreach (var item in _stepDic.OrderBy(o => o.Key))
             {
                 item.Value.Item2.Invoke(_obj, null);
             }
+        }
+
+        public void Run(object data,int stepNum)
+        {
+            if (_stepDic == null)
+                addMethod();
+
+            if (_obj == null)
+                _obj = new T();
+            _obj.SetInputData(data, new Progress<ProcessInfo>());
+
+            _stepDic[stepNum].Item2.Invoke(_obj, null);
         }
 
         private void addMethod()

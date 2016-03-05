@@ -118,9 +118,10 @@ namespace TestScript.Case1
         {
 
             ReadData();
-            foreach (DataRow dr in _dt.Rows)
+            var myDatas = _dt.ToList<Case1DataModel>();
+            foreach (var data in myDatas)
             {
-                var data = dr.ToEntity<Case1DataModel>();
+                
                 Tools.MasterDataVerification(data);
                 
                 setCondig(data);
@@ -609,13 +610,9 @@ namespace TestScript.Case1
             var step = _steps.Where(s => s.Id == 4).First();
             initialStep(step);
 
-            List<AccountModel> accounts = new List<AccountModel>();
+            List<AccountModel> accounts = accountData.ToList<AccountModel>();
 
-            foreach (DataRow dr in accountData.Rows)
-            {
-                AccountModel acct = dr.ToEntity<AccountModel>();
-                accounts.Add(acct);
-            }
+            
             step.IsProcessKnown = true;
             step.TotalProcess = accounts.Count / _dataStepLength + 1;
             for (int i = 0; i < step.TotalProcess; i++)

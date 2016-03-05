@@ -25,6 +25,7 @@ namespace CaseRunner
             {
                 
                 Assembly asm = Assembly.LoadFile(file.FullName);
+                
                 cases.AddRange(getCaseInfo(asm));
                 assembs.Add(asm);
                 

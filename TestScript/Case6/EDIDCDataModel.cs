@@ -21,7 +21,7 @@ namespace TestScript.Case6
         [ColMapping("Message function")]
         public string MessageFunction { get; set; }
 
-        [ColMapping("Created at")]
+        [ColMapping("Created on")]
         public string CreateDt { get; set; }
 
         [ColMapping("Message Type")]

@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 namespace CaseRunnerModel.Attributes
 {
     [AttributeUsage(AttributeTargets.Class,AllowMultiple =false)]
-    public class ScriptInfoAttribute:Attribute
+    public class ScriptAttribute:Attribute
     {
-        public ScriptInfoAttribute(string Name) : this(Name, null, null) { }
+        public ScriptAttribute(string Name) : this(Name, null, null) { }
 
-        public ScriptInfoAttribute(string Name, string Description) : this(Name, Description,null) { }
+        public ScriptAttribute(string Name, string Description) : this(Name, Description,null) { }
 
-        public ScriptInfoAttribute(string Name,string Description,string HelpLink)
+        public ScriptAttribute(string Name,string Description,string HelpLink)
         {
             this.Name = Name;
             this.Description = Description;
