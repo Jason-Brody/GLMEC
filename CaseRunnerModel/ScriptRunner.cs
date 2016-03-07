@@ -9,7 +9,7 @@ using CaseRunnerModel;
 
 namespace CaseRunnerModel
 {
-    public class ScriptRunner<T> where T : class, IScriptRunner, new()
+    public class ScriptRunner<T> where T : class, IScriptRunner1, new()
     {
         private Dictionary<int, Tuple<StepAttribute, MethodInfo>> _stepDic;
 
@@ -29,7 +29,7 @@ namespace CaseRunnerModel
 
             if (_obj == null)
                 _obj = new T();
-            _obj.SetInputData(data, new Progress<ProcessInfo>());
+            _obj.SetInputData(data, new Progress<ProcessInfo1>());
 
 
             foreach (var item in _stepDic.OrderBy(o => o.Key))
@@ -45,7 +45,7 @@ namespace CaseRunnerModel
 
             if (_obj == null)
                 _obj = new T();
-            _obj.SetInputData(data, new Progress<ProcessInfo>());
+            _obj.SetInputData(data, new Progress<ProcessInfo1>());
 
             _stepDic[stepNum].Item2.Invoke(_obj, null);
         }

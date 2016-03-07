@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CaseRunnerModel
 {
-    public class ProcessInfo : WPFNotify
+    public class ProcessInfo1 : WPFNotify
     {
         public int Id { get; set; }
 

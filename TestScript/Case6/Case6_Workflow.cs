@@ -3,18 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using CaseRunnerModel;
-using CaseRunnerModel.Attributes;
+using ScriptRunner.Interface.Attributes;
 using SAPAutomation;
 using SAPFEWSELib;
 using System.IO;
 using Young.Data;
 using Young.Data.Extension;
 using Young.Excel.Interop.Extensions;
+using ScriptRunner.Interface;
 
 namespace TestScript.Case6
 {
-    public class Case6_Workflow : IScriptRunner
+    [Script("GL_MEC_Case006_WorkFlow")]
+    public class Case6_Workflow : IScriptRunner<Case6DataModel>
     {
         private Case6DataModel _data;
         private List<string> _idocList;
@@ -22,24 +23,31 @@ namespace TestScript.Case6
         private Case6FileConfig _fileConfig = null;
         private IProgress<ProcessInfo> _progress = null;
 
-        public void SetInputData(object data, IProgress<ProcessInfo> MyProgress)
+        
+
+        public void SetInputData(Case6DataModel data, IProgress<ProcessInfo> MyProgress)
         {
-            _data = data as Case6DataModel;
+            _data = data;
             _progress = MyProgress;
             Tools.MasterDataVerification(_data);
-            _fileConfig = new Case6FileConfig(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Case6"));
+            _fileConfig = new Case6FileConfig(Path.Combine(Environment.CurrentDirectory, "Case6"));
             _idocList = Tools.GetDatas(Path.Combine(_fileConfig.WorkFolder, "IDocList.txt"));
         }
 
-        
+        public string GetTypeNameofInputData()
+        {
+            return typeof(Case6DataModel).FullName;
+        }
 
-        [Step(Order = 1, Name = "Login to SAP")]
+
+
+        [Step(Id = 1, Name = "Login to SAP")]
         public void Login()
         {
             UIHelper.Login(_data);
         }
 
-        [Step(Order = 2, Name = "TCode Verification")]
+        [Step(Id = 2, Name = "TCode Verification")]
         public void TCodeVerifition()
         {
             UIHelper.SE16TableAccessVerification("EDIDC");
@@ -50,7 +58,7 @@ namespace TestScript.Case6
 
         private List<EDIDCDataModel> _EDIDCDataList = null;
 
-        [Step(Order = 3, Name = "Get IDoc Information")]
+        [Step(Id = 3, Name = "Get IDoc Information")]
         public void GetIDocInformation()
         {
             UIHelper.GoToSE16Table("EDIDC");
@@ -86,7 +94,7 @@ namespace TestScript.Case6
 
         private List<EDIDSDataModel> _EDIDSDataList = null;
 
-        [Step(Order = 4, Name = "Last date for status 69/51")]
+        [Step(Id = 4, Name = "Last date for status 69/51")]
         public void GetIDocInfomation2()
         {
             UIHelper.GoToSE16Table("EDIDS");
@@ -109,9 +117,7 @@ namespace TestScript.Case6
             }
         }
 
-
-
-        [Step(Order = 5, Name = "Pick up agent and partner number")]
+        [Step(Id = 5, Name = "Pick up agent and partner number")]
         public void PickupAgent()
         {
             var items = _EDIDCDataList.GroupBy(g => new { g.MessageFunction, g.MessageType, g.MessageVariant }).ToList();
@@ -143,7 +149,7 @@ namespace TestScript.Case6
 
         private List<EDP21DataModel> _edp21DataList = null;
 
-        [Step(Order = 6, Name = "Merge data from step 5")]
+        [Step(Id = 6, Name = "Merge data from step 5")]
         public void MergeData()
         {
             _edp21DataList = new List<EDP21DataModel>();
@@ -157,7 +163,7 @@ namespace TestScript.Case6
         }
 
         private List<HRP1001DataModel> _hRP1001DataList;
-        [Step(Order = 7, Name = "Check User in HRP1001")]
+        [Step(Id = 7, Name = "Check User in HRP1001")]
         public void CheckUser()
         {
             var objIdList = _edp21DataList.GroupBy(g => g.Agent).Select(g => g.Key).ToList();
@@ -192,7 +198,7 @@ namespace TestScript.Case6
             obj.ExportToFile(_fileConfig.GetFullPath(fileName), "|");
         }
 
-        [Step(Order = 8, Name = "Generate Report")]
+        [Step(Id = 8, Name = "Generate Report")]
         public void GenerateReport()
         {
             readData(ref _EDIDCDataList, _fileConfig.EDIDCFileName);

@@ -134,16 +134,16 @@ namespace CaseTrigger
 
            
 
-            DataTable dt = ExcelHelper.Current.Open("Case1_MTD_Analysis.xlsx").Read("Case6_WorkFlow");
-            var myDatas = dt.ToList<Case6DataModel>();
-            foreach (var d in myDatas)
-            {
-                Case6_Workflow script = new Case6_Workflow();
-                var runner = new ScriptRunner<Case6_Workflow>(script);
-                runner.Run(d, 8);
-               // runner.Run(d);
+            //DataTable dt = ExcelHelper.Current.Open("Case1_MTD_Analysis.xlsx").Read("Case6_WorkFlow");
+            //var myDatas = dt.ToList<Case6DataModel>();
+            //foreach (var d in myDatas)
+            //{
+            //    Case6_Workflow script = new Case6_Workflow();
+            //    var runner = new ScriptRunner<Case6_Workflow>(script);
+            //    runner.Run(d, 8);
+            //   // runner.Run(d);
 
-            }
+            //}
 
 
 

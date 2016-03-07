@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace CaseRunnerModel
 {
-    public interface IScriptRunner
+    public interface IScriptRunner1
     {
-        void SetInputData(object data, IProgress<ProcessInfo> MyProgress);
+        void SetInputData(object data, IProgress<ProcessInfo1> MyProgress);
     }
 }
