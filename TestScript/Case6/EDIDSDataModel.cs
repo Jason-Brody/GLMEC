@@ -35,7 +35,7 @@ namespace TestScript.Case6
         [Display(Name = "Date status error")]
         public string DataStatusError { get; set; }
 
-        [ExcelHeaderStyle(BackgroundColor = 14857357)]
+        [ExcelHeaderStyle(BackgroundColor = 14857357,NumberFormat = "h: mm:ss;@")]
         [ColMapping("Time status error")]
         [Display(Name = "Time status error")]
         public string TimeStatusError { get; set; }

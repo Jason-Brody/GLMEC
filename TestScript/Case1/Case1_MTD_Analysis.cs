@@ -522,7 +522,6 @@ namespace TestScript.Case1
 
             _reportData.ExportToExcel(Path.Combine(_workDir, "result.xlsx"), sheetName, (s) =>
             {
-
                 var sheet = s as Ex.Worksheet;
 
                 var range = sheet.Cells[2, 1] as Ex.Range;
@@ -559,6 +558,13 @@ namespace TestScript.Case1
                 range.VerticalAlignment = Ex.XlVAlign.xlVAlignCenter;
                 range.Font.Bold = true;
                 range.Font.Size = 10;
+
+                var row = sheet.UsedRange.Rows.Count;
+                range = sheet.Range[sheet.Cells[3, 23], sheet.Cells[row, 25]] as Ex.Range;
+                range.FormatConditions.Add(Ex.XlFormatConditionType.xlCellValue, Ex.XlFormatConditionOperator.xlNotBetween, "=-0.00499999", "=0.00499999");
+                (range.FormatConditions[range.FormatConditions.Count] as Ex.FormatCondition).SetFirstPriority();
+                (range.FormatConditions[1] as Ex.FormatCondition).Interior.Color = 49407;
+                (range.FormatConditions[1] as Ex.FormatCondition).StopIfTrue = false;
             });
 
             step.IsComplete = true;

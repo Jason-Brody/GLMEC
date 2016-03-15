@@ -65,7 +65,6 @@ namespace TestScript
                     selectedRow += c.ToString() + ",";
                     columns[col] = c;
                 }
-
             }
 
             columnSetGrid.SelectedRows = selectedRow;
@@ -101,6 +100,49 @@ namespace TestScript
             SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
             ts.Cancel();
             
+        }
+
+        public static void ExportFile(string outputmenuId,  string fileName)
+        {
+            SAPTestHelper.Current.MainWindow.FindById<GuiMenu>(outputmenuId).Select();
+            SAPTestHelper.Current.PopupWindow.FindByName<GuiRadioButton>("SPOPLI-SELFLAG").Select();
+            SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
+
+            FileInfo f = new FileInfo(fileName);
+            if (!f.Directory.Exists)
+                f.Directory.Create();
+            if (f.Exists)
+                f.Delete();
+
+            
+
+            SAPTestHelper.Current.PopupWindow.FindByName<GuiCTextField>("DY_PATH").Text = f.DirectoryName;
+            SAPTestHelper.Current.PopupWindow.FindByName<GuiCTextField>("DY_FILENAME").Text = f.Name;
+
+            var windowName = SAPTestHelper.Current.MainWindow.Text;
+            var args = "\"" + windowName + "\"";
+
+            var ts = new CancellationTokenSource();
+            var ct = ts.Token;
+
+            Task.Run(() => { Utils.SetAccess(windowName, ct); });
+            SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[0]").Press();
+            ts.Cancel();
+
+        }
+
+        public static bool Export(string outputMenuId,string columnsDivideByComma, string fileName)
+        {
+            var grid = SAPTestHelper.Current.MainWindow.FindDescendantByProperty<GuiGridView>();
+            if (grid.RowCount > 0)
+            {
+                Dictionary<string, int> columns = new Dictionary<string, int>();
+                columnsDivideByComma.Split(',').ToList().ForEach(s => columns.Add(s, -1));
+                UIHelper.ChangeLayout(columns);
+                UIHelper.ExportFile("wnd[0]/mbar/menu[0]/menu[10]/menu[3]/menu[2]", fileName);
+                return true;
+            }
+            return false;
         }
 
         public static void SAPAccessVerification(string TCode, Func<Tuple<bool, string>> otherVerification = null)
@@ -154,9 +196,32 @@ namespace TestScript
             SAPTestHelper.Current.MainWindow.SendKey(SAPKeys.Enter);
         }
 
-        public static void SetBatchData(List<string> Datas)
+        public static void CheckUserConfig()
         {
+            SAPTestHelper.Current.SAPGuiSession.StartTransaction("su3");
+            SAPTestHelper.Current.MainWindow.FindByName<GuiTab>("DEFA").Select();
 
+            var decimalNotation = SAPTestHelper.Current.MainWindow.FindByName<GuiComboBox>("SUID_ST_NODE_DEFAULTS-DCPFM");
+
+            bool isChange = false;
+
+            if (decimalNotation.Value != "1,234,567.89")
+            {
+                decimalNotation.Value = "1,234,567.89";
+                isChange = true;
+            }
+
+            var dateFormat = SAPTestHelper.Current.MainWindow.FindByName<GuiComboBox>("SUID_ST_NODE_DEFAULTS-DATFM");
+            if (dateFormat.Value != "DD.MM.YYYY")
+            {
+                dateFormat.Value = "DD.MM.YYYY";
+                isChange = true;
+            }
+
+            if (isChange)
+                SAPTestHelper.Current.MainWindow.SendKey(SAPKeys.Ctrl_S);
+            else
+                SAPTestHelper.Current.MainWindow.SendKey(SAPKeys.F3);
         }
     }
 }

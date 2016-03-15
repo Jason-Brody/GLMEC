@@ -160,7 +160,7 @@ namespace TestScript.Case1
             }
         }
 
-        [ExcelFormula("=(N2/S2)-P2")]
+        [ExcelFormula("=(N2/T2)-P2")]
         [ExcelHeaderStyle("0.00", 49407, 12.00)]
         [Display(Name = "Delta LC/GC")]
         public float Delta_LC_GC
@@ -173,27 +173,31 @@ namespace TestScript.Case1
             }
         }
 
-        [ExcelFormula("=(P2*S2)-N2")]
+        [ExcelFormula("=(P2*T2)-N2")]
         [ExcelHeaderStyle("0.00", 49407, 12.00)]
         [Display(Name = "Delta GC/LC In Loc")]
         public float Delta_GC_LC
         {
             get
             {
-                return AmtInGroupCur * OB08ExTC_GC - AmtInlocalCur;
+                return AmtInGroupCur * OB08ExLC_GC - AmtInlocalCur;
             }
         }
 
-        [ExcelFormula("=(L2/S2)-P2")]
+        [ExcelFormula("=IF(K2=M2,L2-N2,IF(K2=\"USD\",L2-P2,L2/T2-P2))")]
         [ExcelHeaderStyle("0.00", 49407, 13.14)]
         [Display(Name = "Delta TC/LC/GC")]
         public string Delta_TC_LC_GC
         {
             get
             {
-                if (OB08ExTC_GC == 0)
+                if (DocCurrency == LocalCur)
+                    return (AmtInDocCur - AmtInlocalCur).ToString();
+                if (DocCurrency == "USD")
+                    return (AmtInlocalCur - AmtInGroupCur).ToString();
+                if (OB08ExLC_GC == 0)
                     return "ERROR";
-                return (AmtInDocCur / OB08ExTC_GC - AmtInGroupCur).ToString();
+                return (AmtInDocCur / OB08ExLC_GC - AmtInGroupCur).ToString();
             }
         }
 

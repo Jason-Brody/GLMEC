@@ -21,11 +21,11 @@ namespace TestScript.Case6
         private List<string> _idocList;
         private int _maximum = 100000;
         private Case6FileConfig _fileConfig = null;
-        private IProgress<ProcessInfo> _progress = null;
+        private IProgress<ProgressInfo> _progress = null;
 
         
 
-        public void SetInputData(Case6DataModel data, IProgress<ProcessInfo> MyProgress)
+        public void SetInputData(Case6DataModel data, IProgress<ProgressInfo> MyProgress)
         {
             _data = data;
             _progress = MyProgress;
@@ -34,10 +34,7 @@ namespace TestScript.Case6
             _idocList = Tools.GetDatas(Path.Combine(_fileConfig.WorkFolder, "IDocList.txt"));
         }
 
-        public string GetTypeNameofInputData()
-        {
-            return typeof(Case6DataModel).FullName;
-        }
+       
 
 
 
@@ -63,6 +60,7 @@ namespace TestScript.Case6
         {
             UIHelper.GoToSE16Table("EDIDC");
             getIDocInfo();
+
             var grid = SAPTestHelper.Current.MainWindow.FindDescendantByProperty<GuiGridView>();
             if (grid.RowCount > 0)
             {
@@ -85,7 +83,7 @@ namespace TestScript.Case6
             SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("%_I1_%_APP_%-VALU_PUSH").Press();
             var table = SAPTestHelper.Current.PopupWindow.FindByName<GuiTableControl>("SAPLALDBSINGLE");
             table.SetBatchValues(_idocList,i=> {
-                _progress.Report(new ProcessInfo() { IsProcessKnown = true, CurrentProcess = i++, TotalProcess = _idocList.Count });
+                _progress.Report(new ProgressInfo() { IsProgressKnow= true, Current = i++, Total = _idocList.Count });
             });
             SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[8]").Press();
             SAPTestHelper.Current.MainWindow.FindByName<GuiTextField>("MAX_SEL").Text = _maximum.ToString();
@@ -275,20 +273,24 @@ namespace TestScript.Case6
 
             reportDatas.ExportToFile( _fileConfig.GetFullPath(_fileConfig.ReportCSVFile), ",");
 
-            
 
-            for(int i = idocList.Count-1;i>=0;i--)
-            {
-                var historyDatas = _EDIDSDataList.Where(s => s.IDocNumber == idocList[i]).ToList();
-                historyDatas.ExportToExcel($"IDOC_STATUS_CHANGE_HISTORY_{i}", null, "");
+            _EDIDSDataList.ExportToExcel("IDOC_STATUS_CHANGE_HISTORY", null, "");
+            //for(int i = idocList.Count-1;i>=0;i--)
+            //{
+            //    var historyDatas = _EDIDSDataList.Where(s => s.IDocNumber == idocList[i]).ToList();
+            //    historyDatas.ExportToExcel($"IDOC_STATUS_CHANGE_HISTORY_{i}", null, "");
                    
-            }
+            //}
 
             reportDatas.ExportToExcel("Report", null, _fileConfig.GetFullPath(_fileConfig.ReportExcelFile));
 
 
         }
 
-        
+        [Step(Id = 9,Name ="Exit SAP")]
+        public void CloseSAP()
+        {
+            SAPTestHelper.Current.SAPGuiConnection.CloseConnection();
+        }
     }
 }

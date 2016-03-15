@@ -1,5 +1,4 @@
-﻿using CaseRunnerModel;
-using SAPAutomation;
+﻿using SAPAutomation;
 using SAPFEWSELib;
 using System;
 using System.Collections.Generic;
@@ -19,6 +18,7 @@ using TestScript.Case6;
 using Young.Data;
 using Young.Data.Extension;
 using Ex = Microsoft.Office.Interop.Excel;
+using ScriptRunner.Interface;
 
 namespace CaseTrigger
 {
@@ -129,21 +129,94 @@ namespace CaseTrigger
             }
         }
 
+
+        
+        public static string ChooseNode(GuiTree tree, string path)
+        {
+            var paths = path.Split(new string[] { "->" }, StringSplitOptions.None);
+            var initialLevel = 0;
+            var myKey = "";
+            foreach (var key in tree.GetAllNodeKeys())
+            {
+                var level = tree.GetHierarchyLevel(key);
+                if(level == initialLevel)
+                {
+                    var node = tree.GetNodeTextByKey(key);
+                    if (node.ToLower().Trim() == paths[initialLevel].ToLower().Trim())
+                    {
+                        initialLevel++;
+                        if (initialLevel == paths.Count())
+                        {
+                            myKey = key;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (myKey != "")
+            {
+                List<string> keyList = new List<string>();
+                var parentKey = tree.GetParent(myKey);
+                while(parentKey.Trim()!="")
+                {
+                    keyList.Add(parentKey);
+                    parentKey = tree.GetParent(parentKey);
+                }
+                var count = keyList.Count();
+                if(count>0)
+                {
+                    for (int i = count - 1; i >= 0; i--)
+                    {
+                        tree.ExpandNode(keyList[i]);
+                    }
+                    
+                }
+                tree.SelectNode(myKey);
+            }
+               
+            return myKey;
+           
+        }
+
         static void Main(string[] args)
         {
 
-           
 
-            //DataTable dt = ExcelHelper.Current.Open("Case1_MTD_Analysis.xlsx").Read("Case6_WorkFlow");
-            //var myDatas = dt.ToList<Case6DataModel>();
-            //foreach (var d in myDatas)
+
+            //SAPTestHelper.Current.SetSession();
+            //var tree = SAPTestHelper.Current.MainWindow.FindDescendantByProperty<GuiTree>();
+
+            ////SAPTestHelper.Current.SAPGuiSession.FindById<GuiTree>("wnd[0]/shellcont/shellcont/shell/shellcont[0]/shell").ExpandNode("         53");
+            ////SAPTestHelper.Current.SAPGuiSession.FindById<GuiTree>("wnd[0]/shellcont/shellcont/shell/shellcont[0]/shell").SelectNode("         66");
+
+            ////var n = tree.SelectedNode;
+            ////var color = tree.GetNodeTextColor("         62");
+            ////tree.ChooseNode("General Ledger Line Items->Order");
+
+
+            //var a1 = tree.SelectedItemNode();
+            ////SAPTestHelper.Current.SAPGuiSession.FindById<GuiToolbarControl>("wnd[0]/shellcont/shellcont/shell/shellcont[1]/shell").PressButton("TAKE");
+
+
+            //foreach (var item in tree.GetAllNodeKeys())
             //{
-            //    Case6_Workflow script = new Case6_Workflow();
-            //    var runner = new ScriptRunner<Case6_Workflow>(script);
-            //    runner.Run(d, 8);
-            //   // runner.Run(d);
-
+            //    var top = tree.Top;
+            //    var header = tree.GetNodeTextByKey(item);
+            //    var b = tree.GetHierarchyLevel(item);
+            //    var a = tree.GetNodePathByKey(item);
+            //    Console.WriteLine(header + "color:" + tree.GetNodeTextColor(item));
             //}
+            DataTable dt = ExcelHelper.Current.Open("Case1_MTD_Analysis.xlsx").Read("Case6_WorkFlow");
+            var myDatas = dt.ToList<Case6DataModel>();
+            foreach (var d in myDatas)
+            {
+                Case6_Workflow script = new Case6_Workflow();
+                var runner = new ScriptEngine<Case6DataModel>(script);
+
+                runner.Run(d);
+                // runner.Run(d);
+
+            }
 
 
 
@@ -157,7 +230,7 @@ namespace CaseTrigger
 
 
 
-         
+
 
 
         }
