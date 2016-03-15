@@ -25,6 +25,6 @@ namespace TestScript
         public string Client { get; set; }
 
 
-        public string MaximumNo { get; set; } = "10000";
+        public string MaximumNo { get; set; } = "2147483646";
     }
 }

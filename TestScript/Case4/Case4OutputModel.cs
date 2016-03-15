@@ -21,5 +21,9 @@ namespace TestScript.Case4
 
         public List<string> GLAccounts { get; set; }
 
+        public string CostCenterFile { get { return getFile("CostCenter.txt"); } }
+
+        public string InternalOrderFile { get { return getFile("InternalOrder.txt"); } }
+
     }
 }

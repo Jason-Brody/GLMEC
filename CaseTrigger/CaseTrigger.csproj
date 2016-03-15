@@ -53,12 +53,12 @@
     <Reference Include="Microsoft.Office.Interop.Excel, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
-    <Reference Include="SAPAutomation, Version=1.4.0.1, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SAPAutomation, Version=1.4.0.1, Culture=neutral, PublicKeyToken=6671105ccd88f1f0, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\SAPGuiAutomationLib\SAPAutomation\bin\Debug\SAPAutomation.dll</HintPath>
+      <HintPath>..\..\Github\SAPGuiAutomationLib\SAPAutomation\bin\Debug\SAPAutomation.dll</HintPath>
     </Reference>
     <Reference Include="ScriptRunner.Interface">
-      <HintPath>..\..\ScriptRunner\ScriptRunner\ScriptRunner.Interface\bin\Debug\ScriptRunner.Interface.dll</HintPath>
+      <HintPath>..\..\Github\ScriptRunner\ScriptRunner.Interface\bin\Debug\ScriptRunner.Interface.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -72,9 +72,9 @@
     <Reference Include="UIAutomationClient" />
     <Reference Include="UIAutomationProvider" />
     <Reference Include="UIAutomationTypes" />
-    <Reference Include="Young.Data, Version=1.2.0.2, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Young.Data, Version=1.2.0.1, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Young\Young.Data\bin\Debug\Young.Data.dll</HintPath>
+      <HintPath>..\..\Github\Young\Young.Excel.Interop\bin\Debug\Young.Data.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

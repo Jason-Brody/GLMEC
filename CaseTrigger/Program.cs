@@ -19,6 +19,7 @@ using Young.Data;
 using Young.Data.Extension;
 using Ex = Microsoft.Office.Interop.Excel;
 using ScriptRunner.Interface;
+using TestScript.Case4;
 
 namespace CaseTrigger
 {
@@ -181,37 +182,13 @@ namespace CaseTrigger
         static void Main(string[] args)
         {
 
-
-
-            //SAPTestHelper.Current.SetSession();
-            //var tree = SAPTestHelper.Current.MainWindow.FindDescendantByProperty<GuiTree>();
-
-            ////SAPTestHelper.Current.SAPGuiSession.FindById<GuiTree>("wnd[0]/shellcont/shellcont/shell/shellcont[0]/shell").ExpandNode("         53");
-            ////SAPTestHelper.Current.SAPGuiSession.FindById<GuiTree>("wnd[0]/shellcont/shellcont/shell/shellcont[0]/shell").SelectNode("         66");
-
-            ////var n = tree.SelectedNode;
-            ////var color = tree.GetNodeTextColor("         62");
-            ////tree.ChooseNode("General Ledger Line Items->Order");
-
-
-            //var a1 = tree.SelectedItemNode();
-            ////SAPTestHelper.Current.SAPGuiSession.FindById<GuiToolbarControl>("wnd[0]/shellcont/shellcont/shell/shellcont[1]/shell").PressButton("TAKE");
-
-
-            //foreach (var item in tree.GetAllNodeKeys())
-            //{
-            //    var top = tree.Top;
-            //    var header = tree.GetNodeTextByKey(item);
-            //    var b = tree.GetHierarchyLevel(item);
-            //    var a = tree.GetNodePathByKey(item);
-            //    Console.WriteLine(header + "color:" + tree.GetNodeTextColor(item));
-            //}
-            DataTable dt = ExcelHelper.Current.Open("Case1_MTD_Analysis.xlsx").Read("Case6_WorkFlow");
-            var myDatas = dt.ToList<Case6DataModel>();
+          
+            DataTable dt = ExcelHelper.Current.Open("Case1_MTD_Analysis.xlsx").Read("Case4_Parallel_Ledger");
+            var myDatas = dt.ToList<Case4DataModel>();
             foreach (var d in myDatas)
             {
-                Case6_Workflow script = new Case6_Workflow();
-                var runner = new ScriptEngine<Case6DataModel>(script);
+                var script = new Case4_Parallel_Ledger_Reconcilication();
+                var runner = new ScriptEngine<Case4DataModel>(script);
 
                 runner.Run(d);
                 // runner.Run(d);

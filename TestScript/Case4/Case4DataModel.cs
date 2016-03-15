@@ -15,8 +15,10 @@ namespace TestScript.Case4
         [Required]
         public string GLAccountFilePath { get; set; }
 
+        [Required]
         public string PostingDateFrom { get; set; }
 
+        [Required]
         public string PostingDateTo { get; set; }
     }
 }

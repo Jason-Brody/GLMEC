@@ -28,7 +28,8 @@ namespace TestScript.Case4
             _data = data;
             _process = MyProgress;
             Tools.MasterDataVerification(data);
-            _outputModel.GLAccounts = Tools.GetDatas(_data.GLAccountFilePath);
+            var glAccountFile = Path.Combine(_outputModel.WorkDir, _data.GLAccountFilePath);
+            _outputModel.GLAccounts = Tools.GetDatas(glAccountFile);
         }
 
         [Step(Id = 1, Name = "Login to SAP")]
@@ -73,29 +74,84 @@ namespace TestScript.Case4
             UIHelper.Export("wnd[0]/mbar/menu[0]/menu[10]/menu[3]/menu[2]", columns, _outputModel.COASFile);
         }
 
-        [Step(Id =6,Name ="Extract of line item for the above cost centers /internal order")]
+        [Step(Id =6,Name ="Extract of line item for the above cost centers")]
         public void Step5()
+        {
+            string systemName = SAPTestHelper.Current.SAPGuiSession.Info.SystemName;
+            switch (systemName)
+            {
+                case "LH7":
+                    _outputModel.CSKS = Tools.GetDataEntites<CSKSDataModel>(_outputModel.CSKSFile).Where(c => c.LogicalSystem != "" && c.LogicalSystem != "FINTLH7100").ToList();
+                    break;
+                case "LH4":
+                    _outputModel.CSKS = Tools.GetDataEntites<CSKSDataModel>(_outputModel.CSKSFile).Where(c => c.LogicalSystem != "" && c.LogicalSystem != "FINTLH4100").ToList();
+                    break;
+                default:
+                    _outputModel.CSKS = Tools.GetDataEntites<CSKSDataModel>(_outputModel.CSKSFile).Where(c => c.LogicalSystem != "").ToList();
+                    break;
+            }
+            
+            if(_outputModel.CSKS.Count < 1)
+            {
+                throw new Exception("No Cost Centers Found");
+            }
+            extratFAGLL03File(_outputModel.CSKS.GroupBy(g => g.CostCenter).Select(s => s.Key).ToList(), "%_%%DYN001_%_APP_%-VALU_PUSH", _outputModel.CostCenterFile);
+        }
+
+        [Step(Id = 7, Name = "Extract of line item for the above internal order")]
+        public void Step6()
+        {
+            string systemName = SAPTestHelper.Current.SAPGuiSession.Info.SystemName;
+            switch(systemName)
+            {
+                case "LH7":
+                    _outputModel.COAS = Tools.GetDataEntites<COASDataModel>(_outputModel.COASFile).Where(c => c.LogicalSystem != "" && c.LogicalSystem != "FINTLH7100").ToList();
+                    break;
+                case "LH4":
+                    _outputModel.COAS = Tools.GetDataEntites<COASDataModel>(_outputModel.COASFile).Where(c => c.LogicalSystem != "" && c.LogicalSystem != "FINTLH4100").ToList();
+                    break;
+                default:
+                    _outputModel.COAS = Tools.GetDataEntites<COASDataModel>(_outputModel.COASFile).Where(c => c.LogicalSystem != "").ToList();
+                    break;
+            }
+            if(_outputModel.COAS.Count < 1)
+            {
+                throw new Exception("No Internal Orders Found");
+            }
+            extratFAGLL03File(_outputModel.COAS.GroupBy(g => g.InternalOrder).Select(s => s.Key).ToList(), "%_%%DYN002_%_APP_%-VALU_PUSH", _outputModel.InternalOrderFile);
+        }
+
+        private void extratFAGLL03File(List<string> filterDatas,string filterButtonName,string file)
         {
             SAPTestHelper.Current.SAPGuiSession.StartTransaction("FAGLL03");
             SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("%_SD_SAKNR_%_APP_%-VALU_PUSH").Press();
-            var table = SAPTestHelper.Current.PopupWindow.FindDescendantByProperty<GuiTableControl>();
-            table.SetBatchValues(_outputModel.GLAccounts);
+
+            SAPTestHelper.Current.PopupWindow.FindDescendantByProperty<GuiTableControl>().SetBatchValues(_outputModel.GLAccounts);
+            SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[8]").Press();
+
             SAPTestHelper.Current.MainWindow.FindByName<GuiCTextField>("SD_BUKRS-LOW").Text = _data.CompanyCode;
             SAPTestHelper.Current.MainWindow.FindByName<GuiRadioButton>("X_AISEL").Select();
             SAPTestHelper.Current.MainWindow.FindByName<GuiCTextField>("SO_BUDAT-LOW").Text = _data.PostingDateFrom;
             SAPTestHelper.Current.MainWindow.FindByName<GuiCTextField>("SO_BUDAT-HIGH").Text = _data.PostingDateTo;
-            SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("btn[25]").Press();
 
+            SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("btn[25]").Press();
             var btn = SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("btn[5]");
             btn?.Press();
 
             var tree = SAPTestHelper.Current.MainWindow.FindDescendantByProperty<GuiTree>();
-            
+            tree.ChooseNode("General Ledger Line Items->Cost Center");
+            tree.ChooseNode("General Ledger Line Items->Order");
+            SAPTestHelper.Current.SAPGuiSession.FindById<GuiToolbarControl>("wnd[0]/shellcont/shellcont/shell/shellcont[1]/shell").PressButton("TAKE");
+            SAPTestHelper.Current.MainWindow.FindByName<GuiButton>(filterButtonName).Press();
+            SAPTestHelper.Current.PopupWindow.FindDescendantByProperty<GuiTableControl>().SetBatchValues(filterDatas);
+            SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[8]").Press();
+            SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("btn[11]").Press();
+
 
             SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("btn[8]").Press();
-            string columns = "Company Code,G/L Account,Document Number,Business Area,Profit Center,Cost Center,Order,Document currency,Amount in doc. curr.,Local Currency,Amount in local currency,Local currency 2,Amount in loc.curr.2";
-            //UIHelper.Export("wnd[0]/mbar/menu[0]/menu[10]/menu[3]/menu[2]",columns,)
 
+            string columns = "Company Code,G/L Account,Document Number,Business Area,Profit Center,Cost Center,Order,Document currency,Amount in doc. curr.,Local Currency,Amount in local currency,Local currency 2,Amount in loc.curr.2";
+            UIHelper.Export("wnd[0]/mbar/menu[0]/menu[10]/menu[3]/menu[2]", columns, file);
         }
     }
 }
