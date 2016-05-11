@@ -183,12 +183,11 @@ namespace CaseTrigger
         {
 
           
-            DataTable dt = ExcelHelper.Current.Open("Case1_MTD_Analysis.xlsx").Read("Case4_Parallel_Ledger");
-            var myDatas = dt.ToList<Case4DataModel>();
+            DataTable dt = ExcelHelper.Current.Open("Case1_MTD_Analysis.xlsx").Read("Case6_WorkFlow");
+            var myDatas = dt.ToList<Case6DataModel>();
             foreach (var d in myDatas)
             {
-                var script = new Case4_Parallel_Ledger_Reconcilication();
-                var runner = new ScriptEngine<Case4DataModel>(script);
+                var runner = new ScriptEngine<Case6_Workflow,Case6DataModel>();
 
                 runner.Run(d);
                 // runner.Run(d);

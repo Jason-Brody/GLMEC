@@ -15,24 +15,23 @@ using ScriptRunner.Interface;
 namespace TestScript.Case6
 {
     [Script("GL_MEC_Case006_WorkFlow")]
-    public class Case6_Workflow : IScriptRunner<Case6DataModel>
+    public class Case6_Workflow : ScriptBase<Case6DataModel>
     {
-        private Case6DataModel _data;
+        
         private List<string> _idocList;
         private int _maximum = 100000;
         private Case6FileConfig _fileConfig = null;
-        private IProgress<ProgressInfo> _progress = null;
+       
 
-        
 
-        public void SetInputData(Case6DataModel data, IProgress<ProgressInfo> MyProgress)
-        {
-            _data = data;
-            _progress = MyProgress;
+        public override void Initial() {
+            base.Initial();
             Tools.MasterDataVerification(_data);
             _fileConfig = new Case6FileConfig(Path.Combine(Environment.CurrentDirectory, "Case6"));
             _idocList = Tools.GetDatas(Path.Combine(_fileConfig.WorkFolder, "IDocList.txt"));
         }
+
+       
 
        
 
@@ -83,7 +82,8 @@ namespace TestScript.Case6
             SAPTestHelper.Current.MainWindow.FindByName<GuiButton>("%_I1_%_APP_%-VALU_PUSH").Press();
             var table = SAPTestHelper.Current.PopupWindow.FindByName<GuiTableControl>("SAPLALDBSINGLE");
             table.SetBatchValues(_idocList,i=> {
-                _progress.Report(new ProgressInfo() { IsProgressKnow= true, Current = i++, Total = _idocList.Count });
+                _stepReporter.Report(new ProgressInfo() { IsProgressKnow = true, Current = i++, Total = _idocList.Count });
+                
             });
             SAPTestHelper.Current.PopupWindow.FindByName<GuiButton>("btn[8]").Press();
             SAPTestHelper.Current.MainWindow.FindByName<GuiTextField>("MAX_SEL").Text = _maximum.ToString();

@@ -12,7 +12,7 @@ using System.IO;
 namespace TestScript.Case4
 {
     [Script("GL MEC Case004 Parallel Ledger Reconcilication")]
-    public class Case4_Parallel_Ledger_Reconcilication : IScriptRunner<Case4DataModel>
+    public class Case4_Parallel_Ledger_Reconcilication : ScriptBase<Case4DataModel>
     {
         private Case4DataModel _data;
         private IProgress<ProgressInfo> _process;
